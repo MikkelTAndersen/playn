@@ -121,6 +121,15 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   }
 
   @Override
+  public Canvas fillArc(float x, float y, float radius, float startAngle,
+			float endAngle) {
+	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
+    canvas.drawArc(rectF,startAngle,endAngle,true,currentState().prepareFill());
+    isDirty = true;
+    return this;
+  }
+
+  @Override
   public Canvas fillPath(Path path) {
     Asserts.checkArgument(path instanceof AndroidPath);
     canvas.drawPath(((AndroidPath) path).path, currentState().prepareFill());
@@ -254,6 +263,14 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   @Override
   public Canvas strokeCircle(float x, float y, float radius) {
     canvas.drawCircle(x, y, radius, currentState().prepareStroke());
+    isDirty = true;
+    return this;
+  }
+
+  @Override
+  public Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle) {
+	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
+    canvas.drawArc(rectF,startAngle,endAngle,true,currentState().prepareStroke());
     isDirty = true;
     return this;
   }

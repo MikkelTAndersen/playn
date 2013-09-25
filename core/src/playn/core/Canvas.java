@@ -240,6 +240,11 @@ public interface Canvas {
   Canvas fillCircle(float x, float y, float radius);
 
   /**
+   * Fills a part of a circle at the specified center and radius starting with startAngle and end with endAngle.
+   */
+  Canvas fillArc(float x, float y, float radius, float startAngle, float endAngle);
+
+  /**
    * Fills the specified path.
    */
   Canvas fillPath(Path path);
@@ -367,6 +372,11 @@ public interface Canvas {
    * Strokes a circle at the specified center and radius.
    */
   Canvas strokeCircle(float x, float y, float radius);
+
+  /**
+   * Strokes a part of a circle at the specified center and radius starting with startAngle and end with endAngle.
+   */
+  Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle);
 
   /**
    * Strokes the specified path.

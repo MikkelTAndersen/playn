@@ -28,6 +28,7 @@ import playn.core.gl.AbstractCanvasGL;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -43,6 +44,7 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
   private Ellipse2D.Float ellipse = new Ellipse2D.Float();
   private Line2D.Float line = new Line2D.Float();
   private Rectangle2D.Float rect = new Rectangle2D.Float();
+  private Arc2D.Float arc = new Arc2D.Float();
   private RoundRectangle2D.Float roundRect = new RoundRectangle2D.Float();
 
   JavaCanvas(Graphics2D graphics, float width, float height) {
@@ -129,6 +131,15 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
     currentState().prepareFill(gfx);
     ellipse.setFrame(x - radius, y - radius, 2 * radius, 2 * radius);
     gfx.fill(ellipse);
+    isDirty = true;
+    return this;
+  }
+
+  @Override
+  public Canvas fillArc(float x, float y, float radius, float startAngle, float endAngle) {
+    currentState().prepareFill(gfx);
+    arc.setArcByCenter(x, y, radius, startAngle, endAngle, Arc2D.OPEN);
+    gfx.fill(arc);
     isDirty = true;
     return this;
   }
@@ -272,6 +283,16 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
     currentState().prepareStroke(gfx);
     ellipse.setFrame(x - radius, y - radius, 2 * radius, 2 * radius);
     gfx.draw(ellipse);
+    isDirty = true;
+    return this;
+  }
+
+  @Override
+	public Canvas strokeArc(float x, float y, float radius, float startAngle,
+			float endAngle) {
+	currentState().prepareStroke(gfx);
+	arc.setArcByCenter(x, y, radius, startAngle, endAngle, Arc2D.OPEN);
+	gfx.draw(arc);
     isDirty = true;
     return this;
   }

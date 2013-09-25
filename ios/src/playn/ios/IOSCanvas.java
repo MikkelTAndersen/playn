@@ -180,6 +180,16 @@ public class IOSCanvas extends AbstractCanvasGL<CGBitmapContext> {
   }
 
   @Override
+	public Canvas fillArc(float x, float y, float radius, float startAngle,
+			float endAngle) {
+	  //DOC: http://iosapi.xamarin.com/?link=M%3aMonoTouch.CoreGraphics.CGContext.AddArc
+	  bctx.AddArc(x, y, radius, startAngle, endAngle, true);
+	  bctx.FillPath();
+	  isDirty = true;
+	  return null;
+	}
+
+  @Override
   public Canvas fillPath(Path path) {
     bctx.AddPath(((IOSPath) path).cgPath);
     IOSGradient gradient = currentState().gradient;
@@ -326,6 +336,15 @@ public class IOSCanvas extends AbstractCanvasGL<CGBitmapContext> {
     isDirty = true;
     return this;
   }
+
+  @Override
+	public Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle) {
+	 //DOC: http://iosapi.xamarin.com/?link=M%3aMonoTouch.CoreGraphics.CGContext.AddArc
+	  bctx.AddArc(x, y, radius, startAngle, endAngle, true);
+	  bctx.StrokePath();
+	  isDirty = true;
+	  return null;
+	}
 
   @Override
   public Canvas strokePath(Path path) {
