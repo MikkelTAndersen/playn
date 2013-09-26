@@ -19,17 +19,26 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import cli.MonoTouch.CoreGraphics.*;
-import cli.System.Drawing.RectangleF;
-import cli.System.IntPtr;
-import cli.System.Runtime.InteropServices.Marshal;
-
 import playn.core.Canvas;
 import playn.core.Gradient;
 import playn.core.Path;
 import playn.core.Pattern;
 import playn.core.TextLayout;
 import playn.core.gl.AbstractCanvasGL;
+import pythagoras.f.FloatMath;
+import cli.MonoTouch.CoreGraphics.CGAffineTransform;
+import cli.MonoTouch.CoreGraphics.CGBitmapContext;
+import cli.MonoTouch.CoreGraphics.CGBlendMode;
+import cli.MonoTouch.CoreGraphics.CGColor;
+import cli.MonoTouch.CoreGraphics.CGImage;
+import cli.MonoTouch.CoreGraphics.CGImageAlphaInfo;
+import cli.MonoTouch.CoreGraphics.CGInterpolationQuality;
+import cli.MonoTouch.CoreGraphics.CGLineCap;
+import cli.MonoTouch.CoreGraphics.CGLineJoin;
+import cli.MonoTouch.CoreGraphics.CGTextEncoding;
+import cli.System.IntPtr;
+import cli.System.Drawing.RectangleF;
+import cli.System.Runtime.InteropServices.Marshal;
 
 /**
  * Implements {@link Canvas}.
@@ -180,10 +189,10 @@ public class IOSCanvas extends AbstractCanvasGL<CGBitmapContext> {
   }
 
   @Override
-	public Canvas fillArc(float x, float y, float radius, float startAngle,
-			float endAngle) {
+	public Canvas fillArc(float x, float y, float radius, float startAngleRadians,
+			float endAngleRadians) {
 	  //DOC: http://iosapi.xamarin.com/?link=M%3aMonoTouch.CoreGraphics.CGContext.AddArc
-	  bctx.AddArc(x, y, radius, startAngle, endAngle, true);
+	  bctx.AddArc(x, y, radius, startAngleRadians, endAngleRadians, true);
 	  bctx.FillPath();
 	  isDirty = true;
 	  return null;
@@ -338,9 +347,9 @@ public class IOSCanvas extends AbstractCanvasGL<CGBitmapContext> {
   }
 
   @Override
-	public Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle) {
+	public Canvas strokeArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
 	 //DOC: http://iosapi.xamarin.com/?link=M%3aMonoTouch.CoreGraphics.CGContext.AddArc
-	  bctx.AddArc(x, y, radius, startAngle, endAngle, true);
+	  bctx.AddArc(x, y, radius, startAngleRadians, endAngleRadians, true);
 	  bctx.StrokePath();
 	  isDirty = true;
 	  return null;

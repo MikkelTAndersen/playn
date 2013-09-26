@@ -17,12 +17,6 @@ package playn.android;
 
 import java.util.LinkedList;
 
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.graphics.PorterDuff;
-import android.graphics.Rect;
-import android.graphics.RectF;
-
 import playn.core.Asserts;
 import playn.core.Canvas;
 import playn.core.Gradient;
@@ -30,6 +24,12 @@ import playn.core.Path;
 import playn.core.Pattern;
 import playn.core.TextLayout;
 import playn.core.gl.AbstractCanvasGL;
+import pythagoras.f.FloatMath;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.graphics.RectF;
 
 class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
 
@@ -121,10 +121,10 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   }
 
   @Override
-  public Canvas fillArc(float x, float y, float radius, float startAngle,
-			float endAngle) {
+  public Canvas fillArc(float x, float y, float radius, float startAngleRadians,
+			float endAngleRadians) {
 	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
-    canvas.drawArc(rectF,startAngle,endAngle,true,currentState().prepareFill());
+    canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),true,currentState().prepareFill());
     isDirty = true;
     return this;
   }
@@ -268,9 +268,9 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   }
 
   @Override
-  public Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle) {
+  public Canvas strokeArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
 	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
-    canvas.drawArc(rectF,startAngle,endAngle,true,currentState().prepareStroke());
+    canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),true,currentState().prepareStroke());
     isDirty = true;
     return this;
   }

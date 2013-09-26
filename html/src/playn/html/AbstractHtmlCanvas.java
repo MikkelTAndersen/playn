@@ -15,8 +15,6 @@
  */
 package playn.html;
 
-import com.google.gwt.canvas.dom.client.Context2d;
-
 import playn.core.Asserts;
 import playn.core.Canvas;
 import playn.core.Gradient;
@@ -24,6 +22,8 @@ import playn.core.Path;
 import playn.core.Pattern;
 import playn.core.TextLayout;
 import playn.core.gl.AbstractCanvasGL;
+
+import com.google.gwt.canvas.dom.client.Context2d;
 
 abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
 
@@ -104,9 +104,9 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
   }
 
   @Override
-  public Canvas fillArc(float x, float y, float radius, float startAngle, float endAngle) {
+  public Canvas fillArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     ctx.beginPath();
-    ctx.arc(x, y, radius, startAngle, endAngle);
+    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians);
     ctx.fill();
     isDirty = true;
     return this;
@@ -239,9 +239,9 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
   }
 
   @Override
-  public Canvas strokeArc(float x, float y, float radius, float startAngle, float endAngle) {
+  public Canvas strokeArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     ctx.beginPath();
-    ctx.arc(x, y, radius, startAngle, endAngle);
+    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians);
     ctx.stroke();
     isDirty = true;
     return this;

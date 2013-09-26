@@ -15,16 +15,6 @@
  */
 package playn.java;
 
-import pythagoras.f.MathUtil;
-
-import playn.core.Asserts;
-import playn.core.Canvas;
-import playn.core.Gradient;
-import playn.core.Path;
-import playn.core.Pattern;
-import playn.core.TextLayout;
-import playn.core.gl.AbstractCanvasGL;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
@@ -35,6 +25,16 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Deque;
 import java.util.LinkedList;
+
+import playn.core.Asserts;
+import playn.core.Canvas;
+import playn.core.Gradient;
+import playn.core.Path;
+import playn.core.Pattern;
+import playn.core.TextLayout;
+import playn.core.gl.AbstractCanvasGL;
+import pythagoras.f.FloatMath;
+import pythagoras.f.MathUtil;
 
 class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
 
@@ -136,9 +136,9 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
   }
 
   @Override
-  public Canvas fillArc(float x, float y, float radius, float startAngle, float endAngle) {
+  public Canvas fillArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     currentState().prepareFill(gfx);
-    arc.setArcByCenter(x, y, radius, startAngle, endAngle, Arc2D.OPEN);
+    arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians), FloatMath.toDegrees(endAngleRadians), Arc2D.OPEN);
     gfx.fill(arc);
     isDirty = true;
     return this;
@@ -288,10 +288,10 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
   }
 
   @Override
-	public Canvas strokeArc(float x, float y, float radius, float startAngle,
-			float endAngle) {
+	public Canvas strokeArc(float x, float y, float radius, float startAngleRadians,
+			float endAngleRadians) {
 	currentState().prepareStroke(gfx);
-	arc.setArcByCenter(x, y, radius, startAngle, endAngle, Arc2D.OPEN);
+	arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians), FloatMath.toDegrees(endAngleRadians), Arc2D.OPEN);
 	gfx.draw(arc);
     isDirty = true;
     return this;
