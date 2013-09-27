@@ -138,7 +138,7 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
   @Override
   public Canvas fillArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     currentState().prepareFill(gfx);
-    arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians), FloatMath.toDegrees(endAngleRadians), Arc2D.OPEN);
+	arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians+FloatMath.PI), FloatMath.toDegrees(-endAngleRadians), Arc2D.OPEN);
     gfx.fill(arc);
     isDirty = true;
     return this;
@@ -291,7 +291,7 @@ class JavaCanvas extends AbstractCanvasGL<Graphics2D> {
 	public Canvas strokeArc(float x, float y, float radius, float startAngleRadians,
 			float endAngleRadians) {
 	currentState().prepareStroke(gfx);
-	arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians), FloatMath.toDegrees(endAngleRadians), Arc2D.OPEN);
+	arc.setArcByCenter(x, y, radius, FloatMath.toDegrees(startAngleRadians+FloatMath.PI), FloatMath.toDegrees(-endAngleRadians), Arc2D.OPEN);
 	gfx.draw(arc);
     isDirty = true;
     return this;

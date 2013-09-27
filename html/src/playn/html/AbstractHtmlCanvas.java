@@ -106,7 +106,7 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
   @Override
   public Canvas fillArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     ctx.beginPath();
-    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians);
+    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians+startAngleRadians, false);
     ctx.fill();
     isDirty = true;
     return this;
@@ -241,7 +241,7 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
   @Override
   public Canvas strokeArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
     ctx.beginPath();
-    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians);
+    ctx.arc(x, y, radius, startAngleRadians, endAngleRadians+startAngleRadians, false);
     ctx.stroke();
     isDirty = true;
     return this;

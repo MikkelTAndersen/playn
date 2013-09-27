@@ -124,7 +124,7 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   public Canvas fillArc(float x, float y, float radius, float startAngleRadians,
 			float endAngleRadians) {
 	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
-    canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),true,currentState().prepareFill());
+	canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),false,currentState().prepareFill());
     isDirty = true;
     return this;
   }
@@ -270,7 +270,7 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
   @Override
   public Canvas strokeArc(float x, float y, float radius, float startAngleRadians, float endAngleRadians) {
 	RectF rectF = new RectF(x- radius, y - radius, x + radius, y + radius);
-    canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),true,currentState().prepareStroke());
+    canvas.drawArc(rectF,FloatMath.toDegrees(startAngleRadians),FloatMath.toDegrees(endAngleRadians),false,currentState().prepareStroke());
     isDirty = true;
     return this;
   }
