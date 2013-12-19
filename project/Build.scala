@@ -1,7 +1,7 @@
 import java.io.File
 import sbt._
 import Keys._
-import net.thunderklaus.GwtPlugin._
+// import net.thunderklaus.GwtPlugin._
 
 object PlayNBuild extends samskivert.MavenBuild {
 
@@ -12,8 +12,8 @@ object PlayNBuild extends samskivert.MavenBuild {
   )
   // avoid publishing our test projects to Ivy
   val testSettings = seq(
-    publishLocal := false,
-    publish := false
+    publishLocal := (),
+    publish := ()
   )
 
   def excludePath (path :String) :FileFilter = new FileFilter {
@@ -22,38 +22,32 @@ object PlayNBuild extends samskivert.MavenBuild {
 
   override val globalSettings = Seq(
     crossPaths   := false,
-    scalaVersion := "2.9.2",
+    scalaVersion := "2.10.1",
     javacOptions ++= Seq("-Xlint", "-Xlint:-serial", "-source", "1.6", "-target", "1.6"),
     javaOptions ++= Seq("-ea"),
     fork in Compile := true,
     autoScalaLibrary := false, // no scala-library dependency
     publishArtifact in (Compile, packageDoc) := false, // no scaladocs; it fails
     resolvers    += "Forplay Legacy" at "http://forplay.googlecode.com/svn/mavenrepo",
-    // no parallel test execution to avoid confusions
-    parallelExecution in Test := false
+    // wire junit into SBT
+    libraryDependencies ++= Seq(
+      "com.novocode" % "junit-interface" % "0.10" % "test->default"
+    ),
+    testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v"),
+    parallelExecution in Test := false // no parallel test execution to avoid confusions
   )
 
   override def moduleSettings (name :String, pom :pomutil.POM) = name match {
     case "core" => srcDirSettings ++ seq(
       unmanagedBase <<= baseDirectory { base => base / "disabled" },
       // tests depends on resource files mixed into source directory, yay!
-      unmanagedResourceDirectories in Test <+= baseDirectory / "tests",
-      libraryDependencies ++= Seq(
-        "com.novocode" % "junit-interface" % "0.7" % "test->default"
-      )
+      unmanagedResourceDirectories in Test <+= baseDirectory / "tests"
     )
-    case "java" | "android" => srcDirSettings ++ seq(
-      libraryDependencies ++= Seq(
-        "com.novocode" % "junit-interface" % "0.7" % "test->default"
-      )
+    case "jbox2d" | "webgl" | "flash" | "ios" => srcDirSettings
+    case "java" | "android" => srcDirSettings
+    case "swt-java" => srcDirSettings ++ seq(
+      resolvers += "SWT Repo" at "https://swt-repo.googlecode.com/svn/repo/"
     )
-    case "jbox2d" => srcDirSettings ++ seq(
-      // exclude GWT generator and supersource code
-      excludeFilter in unmanagedSources ~= {
-        _ || "PoolingStackGenerator.java" || excludePath("org/jbox2d/emul")
-      }
-    )
-    case "webgl" | "flash" | "ios" => srcDirSettings
     case "html" => srcDirSettings ++ seq(
       // exclude GWT supersource code
       excludeFilter in unmanagedSources ~= { _ || excludePath("playn/super") }
@@ -61,18 +55,21 @@ object PlayNBuild extends samskivert.MavenBuild {
     case "tests-assets" => testSettings
     case "tests-core" => testSettings
     case "tests-java" => testSettings ++ spray.revolver.RevolverPlugin.Revolver.settings
-    case "tests-html" => gwtSettings ++ testSettings ++ seq(
-      gwtVersion := pom.getAttr("gwt.version").get,
-      javaOptions in Gwt ++= Seq("-mx512M"), // give GWT mo' memory
-      libraryDependencies ++= Seq(
-        "org.mortbay.jetty" % "jetty" % "6.1.22" % "container",
-        "com.novocode" % "junit-interface" % "0.7" % "test->default"
-      )
+    case "tests-swt-java" => testSettings ++ spray.revolver.RevolverPlugin.Revolver.settings ++ seq(
+      javaOptions ++= Seq("-XstartOnFirstThread")
     )
+    // case "tests-html" => gwtSettings ++ testSettings ++ seq(
+    //   gwtVersion := pom.getAttr("gwt.version").get,
+    //   javaOptions in Gwt ++= Seq("-mx512M"), // give GWT mo' memory
+    //   libraryDependencies ++= Seq(
+    //     "org.mortbay.jetty" % "jetty" % "6.1.22" % "container"
+    //   )
+    // )
     case _ => Nil
   }
 
   override protected def projects (builder :samskivert.ProjectBuilder) =
     super.projects(builder) ++ Seq(builder("tests-assets"), builder("tests-core"),
-                                   builder("tests-java"), builder("tests-html"))
+                                   builder("tests-java"), builder("tests-swt-java")
+                                   /*, builder("tests-html")*/)
 }

@@ -26,16 +26,14 @@ import cli.System.Drawing.RectangleF;
 import cli.System.Threading.ThreadPool;
 import cli.System.Threading.WaitCallback;
 
-import cli.MonoTouch.CoreGraphics.CGAffineTransform;
 import cli.MonoTouch.Foundation.NSUrl;
 import cli.MonoTouch.UIKit.UIApplication;
 import cli.MonoTouch.UIKit.UIDeviceOrientation;
 import cli.MonoTouch.UIKit.UIInterfaceOrientation;
 import cli.MonoTouch.UIKit.UIScreen;
+import cli.MonoTouch.UIKit.UIView;
 import cli.MonoTouch.UIKit.UIViewController;
 import cli.MonoTouch.UIKit.UIWindow;
-
-import pythagoras.f.FloatMath;
 
 import playn.core.AbstractPlatform;
 import playn.core.Game;
@@ -91,6 +89,11 @@ public class IOSPlatform extends AbstractPlatform {
     }
   }
 
+  // TODO: this should be generalized and shared among platforms that do orientation
+  public interface OrientationChangeListener {
+    void orientationChanged(int orientationValue);
+  }
+
   /** Used to configure the iOS platform. */
   public static class Config {
     /** Indicates which orients are supported by your app. You should also configure this
@@ -118,6 +121,13 @@ public class IOSPlatform extends AbstractPlatform {
      * implications.
      */
     public boolean interpolateCanvasDrawing = true;
+
+    /** The number of audio channels to reserve for OpenAL. This dictates the number of
+     * simultaneous sounds that can be played via OpenAL. It can't be higher than 32, and can be
+     * reduced from the default of 24 if you plan to play a lot of compressed sound effects
+     * simultaneously (those don't go through OpenAL, they go through AVAudioPlayer, and I presume
+     * AVAudioPlayer competes with OpenAL for sound channels). */
+    public int openALSources = 24;
   }
 
   /**
@@ -168,10 +178,11 @@ public class IOSPlatform extends AbstractPlatform {
   private final UIWindow mainWindow;
   private final IOSRootViewController rootViewController;
   private final IOSGameView gameView;
-  private final IOSUIOverlay uiOverlay;
   private final long start = DateTime.get_Now().get_Ticks();
 
   private int currentOrientation;
+
+  private OrientationChangeListener orientationChangeListener;
 
   /** Returns the top-level UIWindow. */
   public UIWindow window () {
@@ -181,16 +192,6 @@ public class IOSPlatform extends AbstractPlatform {
   /** Returns the controller for the root view. */
   public UIViewController rootViewController() {
     return rootViewController;
-  }
-
-  /**
-   * Returns a view to which native overlays may be added. This view will be properly oriented when
-   * the device orientation changes, so views added to it will also be correctly oriented without
-   * additional effort on the part of the caller.
-   */
-  @Override
-  public IOSUIOverlay uiOverlay() {
-    return uiOverlay;
   }
 
   protected IOSPlatform(UIApplication app, Config config) {
@@ -209,7 +210,7 @@ public class IOSPlatform extends AbstractPlatform {
       screenHeight /= 2;
     }
 
-    audio = new IOSAudio(this);
+    audio = new IOSAudio(this, config.openALSources);
     graphics = new IOSGraphics(this, screenWidth, screenHeight, viewScale, deviceScale,
       config.interpolateCanvasDrawing);
     json = new JsonImpl();
@@ -226,16 +227,26 @@ public class IOSPlatform extends AbstractPlatform {
     rootViewController = new IOSRootViewController(this, gameView);
     mainWindow.set_RootViewController(rootViewController);
 
-    uiOverlay = new IOSUIOverlay(bounds);
-    gameView.Add(uiOverlay);
-
     // if the game supplied a proper delegate, configure it (for lifecycle notifications)
     if (app.get_Delegate() instanceof IOSApplicationDelegate)
       ((IOSApplicationDelegate) app.get_Delegate()).setPlatform(this);
 
-    // configure our orientation to a supported default, a notification will come in later that
-    // will adjust us to the device's current orientation
-    onOrientationChange(orients.defaultOrient);
+    // use the status bar orientation during startup. The device orientation will not be known
+    // for some time and most games will want to show a "right side up" loading screen, i.e.
+    // matching the iOS "default" splash
+    int sorient = UIApplication.get_SharedApplication().get_StatusBarOrientation().Value;
+    UIDeviceOrientation dorient = null;
+    for (Map.Entry<UIDeviceOrientation, UIInterfaceOrientation> e : ORIENT_MAP.entrySet()) {
+      if (e.getValue().Value == sorient) {
+        dorient = e.getKey();
+        break;
+      }
+    }
+    // if it isn't supported, use the game's default
+    if (dorient == null || !orients.isSupported(dorient)) {
+      dorient = orients.defaultOrient;
+    }
+    onOrientationChange(dorient);
   }
 
   @Override
@@ -360,6 +371,15 @@ public class IOSPlatform extends AbstractPlatform {
     mainWindow.MakeKeyAndVisible();
   }
 
+  public UIView gameView () {
+    return gameView;
+  }
+
+  public void setOrientationChangeListener (OrientationChangeListener listener) {
+    orientationChangeListener = listener;
+    dispatchOrientationChange(currentOrientation);
+  }
+
   // make these accessible to IOSApplicationDelegate
   @Override
   protected void onPause() {
@@ -387,43 +407,19 @@ public class IOSPlatform extends AbstractPlatform {
 
     currentOrientation = orientation.Value;
     graphics.setOrientation(orientation);
+
     UIInterfaceOrientation sorient = ORIENT_MAP.get(orientation);
-
-    CGAffineTransform trans = CGAffineTransform.MakeIdentity();
-    boolean landscape = false;
-    switch (orientation.Value) {
-    default:
-    case UIDeviceOrientation.Portrait:
-      break;
-    case UIDeviceOrientation.PortraitUpsideDown:
-      trans.Rotate(FloatMath.PI);
-      break;
-    case UIDeviceOrientation.LandscapeLeft:
-      landscape = true;
-      trans.Rotate(FloatMath.PI / 2);
-      break;
-    case UIDeviceOrientation.LandscapeRight:
-      landscape = true;
-      trans.Rotate(-FloatMath.PI / 2);
-      break;
-    }
-    uiOverlay().set_Transform(trans);
-
-    RectangleF overlayBounds = uiOverlay().get_Bounds();
-    if ((overlayBounds.get_Width() > overlayBounds.get_Height()) != landscape) {
-      // swap the width and height
-      float width = overlayBounds.get_Width();
-      overlayBounds.set_Width(overlayBounds.get_Height());
-      overlayBounds.set_Height(width);
-      uiOverlay().set_Bounds(overlayBounds);
-    }
-    // update the overlay's hidden area, if any
-    uiOverlay.updateHidden();
-
     if (!sorient.equals(app.get_StatusBarOrientation())) {
       app.SetStatusBarOrientation(sorient, !app.get_StatusBarHidden());
     }
-    // TODO: notify the game of the orientation change
+    dispatchOrientationChange(orientation.Value);
+  }
+
+  void dispatchOrientationChange (int orientationValue) {
+    if (orientationChangeListener == null) {
+        return;
+    }
+    orientationChangeListener.orientationChanged(orientationValue);
   }
 
   void update() {

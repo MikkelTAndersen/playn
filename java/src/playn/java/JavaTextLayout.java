@@ -22,18 +22,15 @@ import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.text.AttributedString;
 import java.util.ArrayList;
 import java.util.List;
 
-import playn.core.AbstractTextLayout;
+import playn.core.PaddedTextLayout;
 import playn.core.TextFormat;
 import pythagoras.f.Rectangle;
 
-class JavaTextLayout extends AbstractTextLayout {
-
-  private static FontRenderContext dummyFontContext = createDummyFRC();
+class JavaTextLayout extends PaddedTextLayout {
 
   private List<TextLayout> layouts = new ArrayList<TextLayout>();
   private final float xAdjust;
@@ -54,8 +51,9 @@ class JavaTextLayout extends AbstractTextLayout {
       astring.addAttribute(TextAttribute.FONT, ((JavaFont)format.font).jfont);
     }
 
+    FontRenderContext frc = format.antialias ? gfx.aaFontContext : gfx.aFontContext;
     if (format.shouldWrap() || ltext.indexOf('\n') != -1) {
-      LineBreakMeasurer measurer = new LineBreakMeasurer(astring.getIterator(), dummyFontContext);
+      LineBreakMeasurer measurer = new LineBreakMeasurer(astring.getIterator(), frc);
       char eol = '\n'; // TODO: platform line endings?
       int lastPos = ltext.length();
       while (measurer.getPosition() < lastPos) {
@@ -66,7 +64,7 @@ class JavaTextLayout extends AbstractTextLayout {
         layouts.add(measurer.nextLayout(format.wrapWidth, nextRet, false));
       }
     } else {
-      layouts.add(new TextLayout(astring.getIterator(), dummyFontContext));
+      layouts.add(new TextLayout(astring.getIterator(), frc));
     }
 
     // some font glyphs start rendering at a negative inset, blowing outside their bounding box
@@ -134,18 +132,27 @@ class JavaTextLayout extends AbstractTextLayout {
 
   void paint(Graphics2D gfx, float x, float y, boolean stroke) {
     float yoff = y;
-    for (TextLayout layout : layouts) {
-      Rectangle2D bounds = layout.getBounds();
-      float sx = x + xAdjust + format.align.getX(getWidth(bounds), width);
-      yoff += layout.getAscent();
-      if (stroke) {
-        gfx.translate(sx, yoff);
-        gfx.draw(layout.getOutline(null));
-        gfx.translate(-sx, -yoff);
-      } else {
+    Object ohint = gfx.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+    try {
+      gfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, format.antialias ?
+                           RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+
+      for (TextLayout layout : layouts) {
+        Rectangle2D bounds = layout.getBounds();
+        float sx = x + xAdjust + format.align.getX(getWidth(bounds), width);
+        yoff += layout.getAscent();
+        if (stroke) {
+          gfx.translate(sx, yoff);
+          gfx.draw(layout.getOutline(null));
+          gfx.translate(-sx, -yoff);
+        } else {
           layout.draw(gfx, sx, yoff);
+        }
+        yoff += layout.getDescent() + layout.getLeading();
       }
-      yoff += layout.getDescent() + layout.getLeading();
+
+    } finally {
+      gfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, ohint);
     }
   }
 
@@ -154,11 +161,5 @@ class JavaTextLayout extends AbstractTextLayout {
     // this leading whitespace, but we need to include it in our bounds; we don't need to worry
     // about xAdjust here because that's accounted elsewhere
     return (float)(Math.max(0, bounds.getX()) + bounds.getWidth());
-  }
-
-  private static FontRenderContext createDummyFRC() {
-    Graphics2D gfx = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
-    gfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    return gfx.getFontRenderContext();
   }
 }

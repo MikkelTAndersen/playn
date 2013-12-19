@@ -15,24 +15,51 @@
  */
 package playn.java;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import playn.core.Events;
 import playn.core.Key;
-import playn.core.util.Callback;
+import playn.core.Touch;
 
-class JavaKeyboard implements playn.core.Keyboard {
+public abstract class JavaKeyboard implements playn.core.Keyboard {
 
-  private Listener listener;
-  private JFrame frame;
+  private Listener[] listeners = {null};
+  private final List<Queued<?>> queue = Collections.synchronizedList(new ArrayList<Queued<?>>());
+
+  protected final Dispatcher<Event> down = new Dispatcher<Event>() {
+    public void send (Listener l, Event e) { l.onKeyDown(e); }
+  };
+  protected final Dispatcher<Event> up = new Dispatcher<Event>() {
+    public void send (Listener l, Event e) { l.onKeyUp(e); }
+  };
+  protected final Dispatcher<TypedEvent> typed = new Dispatcher<TypedEvent>() {
+    public void send (Listener l, TypedEvent e) { l.onKeyTyped(e); }
+  };
+
+  /** Posts a key event received from elsewhere (i.e. a native UI component). This is useful for
+   * applications that are using GL in Canvas mode and sharing keyboard focus with other (non-GL)
+   * components. The event will be queued and dispatched on the next frame, after GL keyboard
+   * events.
+   *
+   * <p><em>Note</em>: the resulting event will be sent with time = 0, since the GL event time is
+   * inaccessible and platform dependent.</p>
+   *
+   * @param key the key that was pressed or released, or null for a char typed event
+   * @param pressed whether the key was pressed or released, ignored if key is null
+   * @param typedCh the character that was typed, ignored if key is not null
+   */
+  public void post(Key key, boolean pressed, char typedCh) {
+    queue.add(
+      key == null ?
+      new Queued<TypedEvent>(new TypedEvent.Impl(new Events.Flags.Impl(), 0, typedCh), typed) :
+      new Queued<Event>(new Event.Impl(new Events.Flags.Impl(), 0, key), pressed ? down : up));
+  }
 
   @Override
   public void setListener(Listener listener) {
-    this.listener = listener;
+    listeners[0] = listener;
   }
 
   @Override
@@ -40,151 +67,36 @@ class JavaKeyboard implements playn.core.Keyboard {
     return true;
   }
 
-  @Override
-  public void getText(TextType textType, String label, String initVal, Callback<String> callback) {
-    Object result = JOptionPane.showInputDialog(
-      frame, label, "", JOptionPane.QUESTION_MESSAGE, null, null, initVal);
-    callback.onSuccess((String) result);
-  }
-
-  void init() throws LWJGLException {
-    Keyboard.create();
+  void init(Touch touch) {
+    // let our friend the touch emulator have key messages too
+    if (touch instanceof JavaEmulatedTouch)
+      listeners = new Listener[] { listeners[0], ((JavaEmulatedTouch)touch).keyListener };
   }
 
   void update() {
-    while (Keyboard.next()) {
-      if (listener == null) {
-        continue;
-      }
-
-      double time = (double) (Keyboard.getEventNanoseconds() / 1000);
-      int keyCode = Keyboard.getEventKey();
-
-      if (Keyboard.getEventKeyState()) {
-        Key key = translateKey(keyCode);
-        if (key != null)
-          listener.onKeyDown(new playn.core.Keyboard.Event.Impl(
-            new Events.Flags.Impl(), time, key));
-        char keyChar = Keyboard.getEventCharacter();
-        if (!Character.isISOControl(keyChar))
-          listener.onKeyTyped(new playn.core.Keyboard.TypedEvent.Impl(
-            new Events.Flags.Impl(), time, keyChar));
-      } else {
-        Key key = translateKey(keyCode);
-        if (key != null)
-          listener.onKeyUp(new playn.core.Keyboard.Event.Impl(
-            new Events.Flags.Impl(), time, key));
-      }
-    }
+    while (!queue.isEmpty())
+      queue.remove(0).dispatch();
   }
 
-  private Key translateKey(int keyCode) {
-    // TODO(jgw): Confirm that these mappings are correct.
-    switch (keyCode) {
-      case 0x01 : return Key.ESCAPE          ;
-      case 0x02 : return Key.K1              ;
-      case 0x03 : return Key.K2              ;
-      case 0x04 : return Key.K3              ;
-      case 0x05 : return Key.K4              ;
-      case 0x06 : return Key.K5              ;
-      case 0x07 : return Key.K6              ;
-      case 0x08 : return Key.K7              ;
-      case 0x09 : return Key.K8              ;
-      case 0x0A : return Key.K9              ;
-      case 0x0B : return Key.K0              ;
-      case 0x0C : return Key.MINUS           ;
-      case 0x0D : return Key.EQUALS          ;
-      case 0x0E : return Key.BACKSPACE       ;
-      case 0x0F : return Key.TAB             ;
-      case 0x10 : return Key.Q               ;
-      case 0x11 : return Key.W               ;
-      case 0x12 : return Key.E               ;
-      case 0x13 : return Key.R               ;
-      case 0x14 : return Key.T               ;
-      case 0x15 : return Key.Y               ;
-      case 0x16 : return Key.U               ;
-      case 0x17 : return Key.I               ;
-      case 0x18 : return Key.O               ;
-      case 0x19 : return Key.P               ;
-      case 0x1A : return Key.LEFT_BRACKET    ;
-      case 0x1B : return Key.RIGHT_BRACKET   ;
-      case 0x1C : return Key.ENTER           ;
-      case 0x1D : return Key.CONTROL         ;
-      case 0x1E : return Key.A               ;
-      case 0x1F : return Key.S               ;
-      case 0x20 : return Key.D               ;
-      case 0x21 : return Key.F               ;
-      case 0x22 : return Key.G               ;
-      case 0x23 : return Key.H               ;
-      case 0x24 : return Key.J               ;
-      case 0x25 : return Key.K               ;
-      case 0x26 : return Key.L               ;
-      case 0x27 : return Key.SEMICOLON       ;
-      case 0x28 : return Key.QUOTE           ;
-      case 0x2A : return Key.SHIFT           ;
-      case 0x2B : return Key.BACKSLASH       ;
-      case 0x2C : return Key.Z               ;
-      case 0x2D : return Key.X               ;
-      case 0x2E : return Key.C               ;
-      case 0x2F : return Key.V               ;
-      case 0x30 : return Key.B               ;
-      case 0x31 : return Key.N               ;
-      case 0x32 : return Key.M               ;
-      case 0x33 : return Key.COMMA           ;
-      case 0x34 : return Key.PERIOD          ;
-      case 0x35 : return Key.SLASH           ;
-      case 0x36 : return Key.SHIFT           ;
-      case 0x37 : return Key.MULTIPLY        ;
-      case 0x38 : return Key.MENU            ;
-      case 0x39 : return Key.SPACE           ;
-      case 0x3A : return Key.CAPS_LOCK       ;
-      case 0x3B : return Key.F1              ;
-      case 0x3C : return Key.F2              ;
-      case 0x3D : return Key.F3              ;
-      case 0x3E : return Key.F4              ;
-      case 0x3F : return Key.F5              ;
-      case 0x40 : return Key.F6              ;
-      case 0x41 : return Key.F7              ;
-      case 0x42 : return Key.F8              ;
-      case 0x43 : return Key.F9              ;
-      case 0x44 : return Key.F10             ;
-      case 0x45 : return Key.NP_NUM_LOCK     ;
-      case 0x46 : return Key.SCROLL_LOCK     ;
-      case 0x47 : return Key.NP7             ;
-      case 0x48 : return Key.NP8             ;
-      case 0x49 : return Key.NP9             ;
-      case 0x4A : return Key.NP_SUBTRACT     ;
-      case 0x4B : return Key.NP4             ;
-      case 0x4C : return Key.NP5             ;
-      case 0x4D : return Key.NP6             ;
-      case 0x4E : return Key.NP_ADD          ;
-      case 0x4F : return Key.NP1             ;
-      case 0x50 : return Key.NP2             ;
-      case 0x51 : return Key.NP3             ;
-      case 0x52 : return Key.NP0             ;
-      case 0x53 : return Key.NP_DECIMAL      ;
-      case 0x57 : return Key.F11             ;
-      case 0x58 : return Key.F12             ;
-      case 0x90 : return Key.CIRCUMFLEX      ;
-      case 0x91 : return Key.AT              ;
-      case 0x92 : return Key.COLON           ;
-      case 0x93 : return Key.UNDERSCORE      ;
-      case 0xB7 : return Key.SYSRQ           ;
-      case 0xC5 : return Key.PAUSE           ;
-      case 0xC7 : return Key.HOME            ;
-      case 0xC8 : return Key.UP              ;
-      case 0xC9 : return Key.PAGE_UP         ;
-      case 0xCB : return Key.LEFT            ;
-      case 0xCD : return Key.RIGHT           ;
-      case 0xCF : return Key.END             ;
-      case 0xD0 : return Key.DOWN            ;
-      case 0xD1 : return Key.PAGE_DOWN       ;
-      case 0xD2 : return Key.INSERT          ;
-      case 0xD3 : return Key.DELETE          ;
-      case 0xDB : return Key.META            ;
-      case 0xDE : return Key.POWER           ;
+  protected <E extends Events.Input> void dispatch (E e, Dispatcher<E> d) {
+    for (Listener l : listeners) if (l != null) d.send(l, e);
+  }
+
+  protected interface Dispatcher<E extends Events.Input> {
+    void send (Listener l, E e);
+  }
+
+  protected class Queued<E extends Events.Input> {
+    final E event;
+    final Dispatcher<E> dispatcher;
+
+    Queued (E event, Dispatcher<E> dispatcher) {
+      this.event = event;
+      this.dispatcher = dispatcher;
     }
 
-    return null;
+    void dispatch () {
+      JavaKeyboard.this.dispatch(event, dispatcher);
+    }
   }
 }

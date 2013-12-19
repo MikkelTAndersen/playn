@@ -15,11 +15,17 @@
  */
 package playn.java;
 
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.DisplayMode;
 
 import pythagoras.f.Point;
 
@@ -37,18 +43,32 @@ import static playn.core.PlayN.*;
 
 public class JavaGraphics extends GraphicsGL {
 
-  private final GroupLayerGL rootLayer;
-  private final GL20Context ctx;
+  protected final JavaPlatform platform;
+  protected final GL20Context ctx;
+  protected final GroupLayerGL rootLayer;
+  // antialiased font context and aliased font context
+  final FontRenderContext aaFontContext, aFontContext;
 
   public JavaGraphics(JavaPlatform platform, JavaPlatform.Config config) {
+    this.platform = platform;
     // if we're being run in headless mode, create a stub GL context which does not trigger the
     // initialization of LWJGL; this allows tests to run against non-graphics services without
     // needing to configure LWJGL native libraries
-    this.ctx = config.headless ? new GL20Context(platform, null, config.scaleFactor, false) {
-      @Override
-      protected void viewWasResized () {}
-    } : new JavaGLContext(platform, config.scaleFactor, config.width, config.height);
+    this.ctx = config.headless ? new GL20Context(platform, null, config.scaleFactor, false) :
+      new JavaGLContext(platform, config.scaleFactor);
     this.rootLayer = new GroupLayerGL(ctx);
+
+    // set up the dummy font contexts
+    Graphics2D aaGfx = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
+    aaGfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    aaFontContext = aaGfx.getFontRenderContext();
+    Graphics2D aGfx = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
+    aGfx.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+    aFontContext = aGfx.getFontRenderContext();
+
+    if (!config.headless) {
+      setDisplayMode(ctx.scale.scaledCeil(config.width), ctx.scale.scaledCeil(config.height), false);
+    }
   }
 
   /**
@@ -71,8 +91,52 @@ public class JavaGraphics extends GraphicsGL {
   /**
    * Changes the size of the PlayN window.
    */
-  public void setSize(int width, int height) {
+  public void setSize(int width, int height, boolean fullscreen) {
+    int swidth = ctx.scale.scaledCeil(width), sheight = ctx.scale.scaledCeil(height);
+    setDisplayMode(swidth, sheight, fullscreen);
     ctx.setSize(width, height);
+  }
+
+  protected void setDisplayMode(int width, int height, boolean fullscreen) {
+    try {
+      // check if current mode is suitable
+      DisplayMode mode = Display.getDisplayMode();
+      if (fullscreen == Display.isFullscreen() &&
+          mode.getWidth() == width && mode.getHeight() == height)
+        return;
+
+      if (fullscreen) {
+        // try and find a mode matching width and height
+        DisplayMode matching = null;
+        for (DisplayMode test : Display.getAvailableDisplayModes()) {
+          if (test.getWidth() == width && test.getHeight() == height && test.isFullscreenCapable()) {
+            matching = test;
+          }
+        }
+
+        if (matching == null) {
+          platform.log().info("Could not find a matching fullscreen mode, available: " +
+                              Arrays.asList(Display.getAvailableDisplayModes()));
+        } else {
+          mode = matching;
+        }
+
+      } else {
+        mode = new DisplayMode(width, height);
+      }
+
+      platform.log().debug("Updating display mode: " + mode + ", fullscreen: " + fullscreen);
+      // TODO: fix crashes when fullscreen is toggled repeatedly
+      if (fullscreen) {
+        Display.setDisplayModeAndFullscreen(mode);
+        // TODO: fix alt-tab, maybe add a key listener or something?
+      } else {
+        Display.setDisplayMode(mode);
+      }
+
+    } catch (LWJGLException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @Override
@@ -113,12 +177,12 @@ public class JavaGraphics extends GraphicsGL {
 
   @Override
   public int screenWidth() {
-    return Display.getDesktopDisplayMode().getWidth();
+    return ctx.scale.invScaledFloor(Display.getDesktopDisplayMode().getWidth());
   }
 
   @Override
   public int screenHeight() {
-    return Display.getDesktopDisplayMode().getHeight();
+    return ctx.scale.invScaledFloor(Display.getDesktopDisplayMode().getHeight());
   }
 
   @Override
@@ -139,17 +203,21 @@ public class JavaGraphics extends GraphicsGL {
     return new JavaAsyncImage(ctx, width, height);
   }
 
-  void init() {
+  protected void init() {
+    DisplayMode mode = Display.getDisplayMode();
+    ctx.setSize(ctx.scale.invScaledFloor(mode.getWidth()),
+                ctx.scale.invScaledFloor(mode.getHeight()));
     ctx.init();
   }
 
-  void transformMouse(Point point) {
-    point.x /= ctx.scale.factor;
-    point.y /= ctx.scale.factor;
+  protected void paint() {
+    ctx.paint(rootLayer);
   }
 
-  void paint() {
-    ctx.paint(rootLayer);
+  Point transformMouse(Point point) {
+    point.x /= ctx.scale.factor;
+    point.y /= ctx.scale.factor;
+    return point;
   }
 
   protected Map<String,java.awt.Font> _fonts = new HashMap<String,java.awt.Font>();

@@ -20,22 +20,24 @@ package playn.core;
  */
 public abstract class AbstractTextLayout implements TextLayout {
 
+  protected final String text;
   protected final TextFormat format;
-  // this is used to reserve one pixel of padding around the edge of our rendered text which makes
-  // antialising work much more nicely
-  protected final float pad;
+
   protected float width, height;
 
   @Override
+  public String text() {
+    return text;
+  }
+
+  @Override
   public float width() {
-    // reserve a pixel on the left and right to make antialiasing work better
-    return width + 2*pad;
+    return width;
   }
 
   @Override
   public float height() {
-    // reserve a pixel on the top and bottom to make antialiasing work better
-    return height + 2*pad;
+    return height;
   }
 
   @Override
@@ -43,8 +45,8 @@ public abstract class AbstractTextLayout implements TextLayout {
     return format;
   }
 
-  protected AbstractTextLayout(Graphics gfx, String text, TextFormat format) {
+  protected AbstractTextLayout (String text, TextFormat format) {
+    this.text = text;
     this.format = format;
-    this.pad = 1/gfx.scaleFactor();
   }
 }

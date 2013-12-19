@@ -36,6 +36,7 @@
     <module>html</module>
     <module>ios</module>
     <module>java</module>
+    <module>swt-java</module>
     <module>payments</module>
     <module>server</module>
     <module>tests</module>
@@ -46,6 +47,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <android.version>4.1.1.4</android.version>
     <android.maven.version>3.6.0</android.maven.version>
+    <swt.version>4.3</swt.version>
     <monotouch.version>6.0.6</monotouch.version>
     <gwt.version>2.5.0</gwt.version>
     <jbox2d.version>2.2.1.1</jbox2d.version>
@@ -259,6 +261,22 @@
         <gwt.outputstyle>OBF</gwt.outputstyle>
         <gwt.xdisable>true</gwt.xdisable>
       </properties>
+    </profile>
+    <profile>
+      <id>deploy-local</id>
+      <distributionManagement>
+        <repository>
+          <id>deploy-local</id>
+          <name>Local maven repository</name>
+          <url>${deploy-local.dir}</url>
+        </repository>
+	<snapshotRepository>
+	  <uniqueVersion>false</uniqueVersion>
+	  <id>deploy-local-snapshots</id>
+	  <name>Local maven snapshot repository</name>
+	  <url>${deploy-local.dir}</url>
+	</snapshotRepository>
+      </distributionManagement>
     </profile>
   </profiles>
 </project>

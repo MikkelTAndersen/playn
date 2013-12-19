@@ -21,16 +21,14 @@ import java.util.List;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
+import playn.core.AbstractTextLayout;
 import playn.core.TextFormat;
-import playn.core.TextLayout;
 import pythagoras.f.Rectangle;
 
-class AndroidTextLayout implements TextLayout {
+class AndroidTextLayout extends AbstractTextLayout {
 
-  private final TextFormat format;
   private final AndroidFont font;
   private final Paint paint;
-  private final float width, height;
   private final Paint.FontMetrics metrics;
   private final List<Line> lines = new ArrayList<Line>();
 
@@ -41,16 +39,6 @@ class AndroidTextLayout implements TextLayout {
       this.text = text;
       this.width = width;
     }
-  }
-
-  @Override
-  public float width() {
-    return width;
-  }
-
-  @Override
-  public float height() {
-    return height;
   }
 
   @Override
@@ -81,18 +69,14 @@ class AndroidTextLayout implements TextLayout {
     return metrics.leading;
   }
 
-  @Override
-  public TextFormat format() {
-    return format;
-  }
-
   AndroidTextLayout(String text, TextFormat format) {
-    this.format = format;
+    super(text, format);
     this.font = (format.font == null) ? AndroidFont.DEFAULT : (AndroidFont)format.font;
 
-    paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint = new Paint(format.antialias ? Paint.ANTI_ALIAS_FLAG : 0);
     paint.setTypeface(font.typeface);
     paint.setTextSize(font.size());
+    paint.setSubpixelText(true);
     metrics = paint.getFontMetrics();
 
     // normalize newlines in the text (Windows: CRLF -> LF, Mac OS pre-X: CR -> LF)
@@ -176,15 +160,23 @@ class AndroidTextLayout implements TextLayout {
   }
 
   void draw(Canvas canvas, float x, float y, Paint paint) {
-    paint.setTypeface(font.typeface);
-    paint.setTextSize(font.size());
+    boolean oldAA = paint.isAntiAlias();
+    paint.setAntiAlias(format.antialias);
+    try {
+      paint.setTypeface(font.typeface);
+      paint.setTextSize(font.size());
+      paint.setSubpixelText(true);
 
-    float yoff = TOP_FUDGE;
-    for (Line line : lines) {
-      float rx = format.align.getX(line.width, width-LEFT_FUDGE-RIGHT_FUDGE);
-      yoff -= metrics.ascent;
-      canvas.drawText(line.text, x + rx + LEFT_FUDGE, y + yoff, paint);
-      yoff += metrics.descent + metrics.leading;
+      float yoff = TOP_FUDGE;
+      for (Line line : lines) {
+        float rx = format.align.getX(line.width, width-LEFT_FUDGE-RIGHT_FUDGE);
+        yoff -= metrics.ascent;
+        canvas.drawText(line.text, x + rx + LEFT_FUDGE, y + yoff, paint);
+        yoff += metrics.descent + metrics.leading;
+      }
+
+    } finally {
+      paint.setAntiAlias(oldAA);
     }
   }
 

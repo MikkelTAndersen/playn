@@ -30,11 +30,11 @@ import playn.core.AbstractPlatform;
 import playn.core.Analytics;
 import playn.core.Game;
 import playn.core.Json;
+import playn.core.Key;
 import playn.core.Keyboard;
 import playn.core.Mouse;
 import playn.core.Net;
 import playn.core.PlayN;
-import playn.core.Pointer;
 import playn.core.RegularExpression;
 import playn.core.Storage;
 import playn.core.Touch;
@@ -65,11 +65,18 @@ public class JavaPlatform extends AbstractPlatform {
     /** If set, emulates Touch and disables Mouse. For testing. */
     public boolean emulateTouch;
 
+    /** If {link #emulateTouch} is set, sets the pivot for a two-finger touch when pressed. */
+    public Key multiTouchKey = Key.F11;
+
     /** If set, converts images into a format for fast GPU uploads when initially loaded versus
      * doing it on demand when displayed. Assuming asynchronous image loads, this keeps that effort
      * off the main thread so it doesn't cause slow frames.
      */
     public boolean convertImagesOnLoad = true;
+
+    /** If supported by the backend and platform, configures the application's name and initial
+     * window title. Currently only supported for SWT backend. */
+    public String appName = "Game";
   }
 
   /**
@@ -111,13 +118,14 @@ public class JavaPlatform extends AbstractPlatform {
 
   public final boolean convertImagesOnLoad;
 
+  private final Config config;
   private final JavaAnalytics analytics = new JavaAnalytics();
   private final JavaAudio audio = new JavaAudio(this);
   private final JavaNet net = new JavaNet(this);
   private final JavaRegularExpression regex = new JavaRegularExpression();
   private final JavaStorage storage;
   private final JsonImpl json = new JsonImpl();
-  private final JavaKeyboard keyboard = new JavaKeyboard();
+  private final JavaKeyboard keyboard;
   private final JavaPointer pointer = new JavaPointer();
   private final TouchImpl touch;
   private final JavaGraphics graphics;
@@ -129,18 +137,21 @@ public class JavaPlatform extends AbstractPlatform {
 
   public JavaPlatform(Config config) {
     super(new JavaLog());
+    this.config = config;
     unpackNatives();
-    graphics = new JavaGraphics(this, config);
+    graphics = createGraphics(config);
+    keyboard = createKeyboard();
     storage = new JavaStorage(this, config);
-    if (config.emulateTouch) {
-      JavaEmulatedTouch emuTouch = new JavaEmulatedTouch();
-      mouse = emuTouch.createMouse(this);
-      touch = emuTouch;
+    touch = createTouch(config);
+    if (touch instanceof JavaEmulatedTouch) {
+      mouse = ((JavaEmulatedTouch)touch).createMouse(this);
     } else {
-      mouse = new JavaMouse(this);
-      touch = new TouchStub();
+      mouse = createMouse();
     }
 
+    if (!config.headless) {
+      setTitle(config.appName);
+    }
     convertImagesOnLoad = config.convertImagesOnLoad;
   }
 
@@ -189,7 +200,7 @@ public class JavaPlatform extends AbstractPlatform {
   }
 
   @Override
-  public Pointer pointer() {
+  public JavaPointer pointer() {
     return pointer;
   }
 
@@ -256,45 +267,60 @@ public class JavaPlatform extends AbstractPlatform {
 
   @Override
   public void run(final Game game) {
-    try {
-      // initialize LWJGL (and show the display) now that the game has been initialized
-      graphics.init();
-      // now that the display is initialized we can init our mouse and keyboard
-      mouse.init();
-      keyboard.init();
-    } catch (LWJGLException e) {
-      throw new RuntimeException("Unrecoverable initialization error", e);
+    if (!config.headless) {
+      try {
+        Display.create();
+      } catch (LWJGLException e) {
+        throw new RuntimeException(e);
+      }
     }
-    game.init();
+    init(game);
 
     boolean wasActive = Display.isActive();
     while (!Display.isCloseRequested()) {
-      // Event handling.
-      mouse.update();
-      keyboard.update();
-      pointer.update();
-
       // Notify the app if lose or regain focus (treat said as pause/resume).
-      if (wasActive != Display.isActive()) {
+      boolean newActive = Display.isActive();
+      if (wasActive != newActive) {
         if (wasActive)
           onPause();
         else
           onResume();
-        wasActive = Display.isActive();
+        wasActive = newActive;
       }
-
-      // Execute any pending runnables.
-      runQueue.execute();
-
-      // Run the game loop, render the scene graph, and update the display.
-      game.tick(tick());
-      graphics.paint();
+      processFrame(game);
       Display.update();
-
       // Sleep until it's time for the next frame.
       Display.sync(60);
     }
 
+    shutdown();
+  }
+
+  protected JavaGraphics createGraphics(Config config) {
+    return new JavaGraphics(this, config);
+  }
+  protected TouchImpl createTouch(Config config) {
+    if (config.emulateTouch) {
+      return new JavaEmulatedTouch(config.multiTouchKey);
+    } else {
+      return new TouchStub();
+    }
+  }
+  protected JavaMouse createMouse() {
+    return new JavaLWJGLMouse(this);
+  }
+  protected JavaKeyboard createKeyboard() {
+    return new JavaLWJGLKeyboard();
+  }
+
+  protected void init(Game game) {
+    graphics.init();
+    mouse.init();
+    keyboard.init(touch);
+    game.init();
+  }
+
+  protected void shutdown() {
     // let the game run any of its exit hooks
     onExit();
 
@@ -308,6 +334,20 @@ public class JavaPlatform extends AbstractPlatform {
 
     // and finally stick a fork in the JVM
     System.exit(0);
+  }
+
+  protected void processFrame(Game game) {
+    // Event handling.
+    mouse.update();
+    keyboard.update();
+    pointer.update();
+
+    // Execute any pending runnables.
+    runQueue.execute();
+
+    // Run the game loop, render the scene graph, and update the display.
+    game.tick(tick());
+    graphics.paint();
   }
 
   protected void unpackNatives() {

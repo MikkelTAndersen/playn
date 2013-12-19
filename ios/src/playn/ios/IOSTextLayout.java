@@ -29,11 +29,11 @@ import cli.MonoTouch.Foundation.NSRange;
 import cli.System.Drawing.PointF;
 import cli.System.Drawing.RectangleF;
 
-import playn.core.AbstractTextLayout;
+import playn.core.PaddedTextLayout;
 import playn.core.TextFormat;
 import pythagoras.f.Rectangle;
 
-class IOSTextLayout extends AbstractTextLayout {
+class IOSTextLayout extends PaddedTextLayout {
 
   // There are numerous impedance mismatches between how PlayN wants to layout text and how iOS
   // allows text to be laid out. Fortunately, with some hackery, we can make things work (quite
@@ -80,7 +80,7 @@ class IOSTextLayout extends AbstractTextLayout {
 
     public abstract int lineCount();
     public abstract Rectangle lineBounds(int line);
-    public abstract void paint(CGBitmapContext bctx, float x, float y);
+    public abstract void paint(CGBitmapContext bctx, float x, float y, boolean antialias);
   }
 
   private class Wrapped extends IOSTextStamp {
@@ -135,11 +135,12 @@ class IOSTextLayout extends AbstractTextLayout {
     }
 
     @Override
-    public void paint(CGBitmapContext bctx, float x, float y) {
+    public void paint(CGBitmapContext bctx, float x, float y, boolean antialias) {
       float dx = x + adjustX, dy = y + ascent;
       bctx.SaveState();
       bctx.TranslateCTM(dx, dy);
       bctx.ScaleCTM(1, -1);
+      bctx.SetShouldAntialias(antialias);
       PointF origin = new PointF(0, 0);
       for (int ii = 0; ii < lines.length; ii++) {
         origin.set_X(origins[ii].get_X());
@@ -176,11 +177,12 @@ class IOSTextLayout extends AbstractTextLayout {
     }
 
     @Override
-    public void paint(CGBitmapContext bctx, float x, float y) {
+    public void paint(CGBitmapContext bctx, float x, float y, boolean antialias) {
       float dy = y + ascent;
       bctx.SaveState();
       bctx.TranslateCTM(x, dy);
       bctx.ScaleCTM(1, -1);
+      bctx.SetShouldAntialias(antialias);
       bctx.set_TextPosition(new PointF(0, 0));
       line.Draw(bctx);
       bctx.RestoreState();
@@ -233,11 +235,11 @@ class IOSTextLayout extends AbstractTextLayout {
       this.strokeWidth = strokeWidth;
       strokeStamp = createStamp(text, strokeWidth, strokeColor);
     }
-    strokeStamp.paint(bctx, x+pad, y+pad);
+    strokeStamp.paint(bctx, x+pad, y+pad, format.antialias);
   }
 
   void fill(CGBitmapContext bctx, float x, float y) {
-    fillStamp.paint(bctx, x+pad, y+pad);
+    fillStamp.paint(bctx, x+pad, y+pad, format.antialias);
   }
 
   private IOSTextStamp createStamp(String text, Float strokeWidth, Integer strokeColor) {

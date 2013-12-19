@@ -89,12 +89,12 @@ public abstract class GLContext {
    * Sets the view width to the specified width and height (in pixels). The framebuffer will
    * potentially be larger than this size if a HiDPI scale factor is in effect.
    */
-  public void setSize(int width, int height) {
+  public final void setSize(int width, int height) {
     viewWidth = width;
     viewHeight = height;
     curFbufWidth = defaultFbufWidth = scale.scaledCeil(width);
     curFbufHeight = defaultFbufHeight = scale.scaledCeil(height);
-    viewWasResized();
+    viewConfigChanged();
   }
 
   /**
@@ -160,10 +160,12 @@ public abstract class GLContext {
    */
   public abstract GLBuffer.Short createShortBuffer(int capacity);
 
-  /** Creates a framebuffer that will render into the supplied texture. */
+  /** Creates a framebuffer that will render into the supplied texture. <em>NOTE:</em> this must be
+   * followed immediately by a call to {@link #bindFramebuffer(int,int,int)} or {@link
+   * #pushFramebuffer}. */
   public int createFramebuffer(int tex) {
     flush();
-    return (lastFramebuffer = createFramebufferImpl(tex));
+    return createFramebufferImpl(tex);
   }
 
   /** Deletes the supplied frame buffer (which will have come from {@link #createFramebuffer}). */
@@ -282,7 +284,7 @@ public abstract class GLContext {
   }
 
   public void flush() {
-      flush(false);
+    flush(false);
   }
 
   public void flush(boolean deactivate) {
@@ -290,7 +292,6 @@ public abstract class GLContext {
       checkGLError("flush()");
       curShader.flush();
       if (deactivate) curShader.deactivate();
-      curShader = null;
     }
   }
 
@@ -379,7 +380,7 @@ public abstract class GLContext {
     this.platform = platform;
   }
 
-  protected void viewWasResized () {
+  protected void viewConfigChanged () {
     bindFramebufferImpl(defaultFrameBuffer(), defaultFbufWidth, defaultFbufHeight);
   }
 

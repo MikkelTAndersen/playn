@@ -18,7 +18,12 @@ package playn.ios;
 import java.io.FileNotFoundException;
 
 import cli.System.IO.File;
+import cli.System.IO.FileAccess;
+import cli.System.IO.FileMode;
+import cli.System.IO.FileShare;
+import cli.System.IO.FileStream;
 import cli.System.IO.Path;
+import cli.System.IO.BinaryReader;
 import cli.System.IO.StreamReader;
 
 import cli.MonoTouch.Foundation.NSData;
@@ -91,17 +96,13 @@ public class IOSAssets extends AbstractAssets<UIImage> {
   }
 
   @Override
-  public Sound getSound(final String path) {
-    // first try the .caf sound, then fall back to .mp3
-    for (String encpath : new String[] { path + ".caf", path + ".mp3" }) {
-      String fullPath = Path.Combine(pathPrefix, encpath);
-      if (!File.Exists(fullPath)) continue;
-      // platform.log().debug("Loading sound " + path);
-      return platform.audio().createSound(fullPath);
-    }
+  public Sound getSound(String path) {
+    return createSound(path, false);
+  }
 
-    platform.log().warn("Missing sound: " + path);
-    return new Sound.Error(new FileNotFoundException(path));
+  @Override
+  public Sound getMusic(String path) {
+    return createSound(path, true);
   }
 
   @Override
@@ -112,6 +113,23 @@ public class IOSAssets extends AbstractAssets<UIImage> {
     try {
       reader = new StreamReader(fullPath);
       return reader.ReadToEnd();
+    } finally {
+      if (reader != null) {
+        reader.Close();
+      }
+    }
+  }
+
+  @Override
+  public byte[] getBytesSync(String path) throws Exception {
+    String fullPath = Path.Combine(pathPrefix, path);
+    // platform.log().debug("Loading bytes " + fullPath);
+    BinaryReader reader = null;
+    try {
+      FileStream stream = new FileStream(fullPath, FileMode.wrap(FileMode.Open),
+        FileAccess.wrap(FileAccess.Read), FileShare.wrap(FileShare.Read));
+      reader = new BinaryReader(stream);
+      return reader.ReadBytes((int)stream.get_Length());
     } finally {
       if (reader != null) {
         reader.Close();
@@ -151,5 +169,17 @@ public class IOSAssets extends AbstractAssets<UIImage> {
       error = new FileNotFoundException(fullPath);
     }
     return recv.loadFailed(error);
+  }
+
+  private Sound createSound(String path, boolean isMusic) {
+    // look for .caf (uncompressed), .aifc (compressed, but fast), then .mp3
+    for (String encpath : new String[] { path + ".caf", path + ".aifc", path + ".mp3" }) {
+      String fullPath = Path.Combine(pathPrefix, encpath);
+      if (!File.Exists(fullPath)) continue;
+      return platform.audio().createSound(fullPath, isMusic);
+    }
+
+    platform.log().warn("Missing sound: " + path);
+    return new Sound.Error(new FileNotFoundException(path));
   }
 }
