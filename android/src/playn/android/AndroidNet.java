@@ -35,6 +35,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+import playn.core.Net.RTCPeerConnection.Listener;
 import playn.core.NetImpl;
 import playn.core.util.Callback;
 
@@ -107,4 +108,10 @@ class AndroidNet extends NetImpl {
       }
     });
   }
+
+@Override
+public RTCPeerConnection createRTCPeerConnection(String url, Listener listener) {
+	// TODO Auto-generated method stub
+	return null;
+}
 }

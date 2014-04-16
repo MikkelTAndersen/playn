@@ -22,7 +22,6 @@ import java.util.Map;
 
 import cli.System.Convert;
 import cli.System.Runtime.InteropServices.Marshal;
-
 import cli.MonoTouch.Foundation.NSData;
 import cli.MonoTouch.Foundation.NSDictionary;
 import cli.MonoTouch.Foundation.NSError;
@@ -37,7 +36,7 @@ import cli.MonoTouch.Foundation.NSUrlConnection;
 import cli.MonoTouch.Foundation.NSUrlConnectionDelegate;
 import cli.MonoTouch.Foundation.NSUrlRequest;
 import cli.MonoTouch.Foundation.NSUrlResponse;
-
+import playn.core.Net.RTCPeerConnection.Listener;
 import playn.core.NetImpl;
 import playn.core.util.Callback;
 
@@ -124,4 +123,10 @@ public class IOSNet extends NetImpl {
       }
     }, true);
   }
+
+@Override
+public RTCPeerConnection createRTCPeerConnection(String url, Listener listener) {
+	// TODO Auto-generated method stub
+	return null;
+}
 }

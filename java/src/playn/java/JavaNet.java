@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.google.common.io.ByteStreams;
 
+import playn.core.Net.RTCPeerConnection.Listener;
 import playn.core.NetImpl;
 import playn.core.util.Callback;
 
@@ -105,4 +106,10 @@ public class JavaNet extends NetImpl {
   private String server() {
     return "127.0.0.1:8080";
   }
+
+@Override
+public RTCPeerConnection createRTCPeerConnection(String url, Listener listener) {
+	// TODO Auto-generated method stub
+	return null;
+}
 }

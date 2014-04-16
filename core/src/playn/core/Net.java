@@ -137,6 +137,80 @@ public interface Net {
   WebSocket createWebSocket(String url, WebSocket.Listener listener);
 
   /**
+    
+    
+var pc = new webkitRTCPeerConnection(servers,
+  {optional: [{RtpDataChannels: true}]});
+
+pc.ondatachannel = function(event) {
+  receiveChannel = event.channel;
+  receiveChannel.onmessage = function(event){
+    document.querySelector("div#receive").innerHTML = event.data;
+  };
+};
+
+sendChannel = pc.createDataChannel("sendDataChannel", {reliable: false});
+
+document.querySelector("button#send").onclick = function (){
+  var data = document.querySelector("textarea#send").value;
+  sendChannel.send(data);
+};
+*/
+  
+/** Encapsulates a RTC Peer Connection. */
+  interface RTCPeerConnection {
+    /** Notifies game of web socket events. */
+    interface Listener {
+      /** Reports that a requested data channel is now open and ready for use. */
+      void onDataChannel(RTCDataChannelEvent event);
+
+      void onSetLocalDescription(String sessionDescription);
+      
+      void onSetRemoteDescription(String sessionDescription);
+      
+      void onIceCandidate(String candidate, String sdpMid, int sdpMLineIndex);
+    }
+    
+	void close();
+
+	RTCDataChannel createOffer();
+    
+    interface RTCDataChannelEvent  {
+        RTCDataChannel getChannel();
+    }
+    
+    interface RTCDataChannel  { 
+        void send(String data);
+        void addListener(Listener listener);
+    	 interface Listener  {
+	    	void onMessage(String data);
+	        void onClose();
+	        void onError(String reason);
+	    	void onOpen();
+	    }
+    }
+
+    String getLocalDescription();
+
+    void setLocalDescription(String sessionDescription);
+    
+    String getRemoteDescription();
+
+    void setRemoteDescription(String sessionDescription);
+	
+    void createAnswer(String sdp);
+
+	void addIceCandidate(String candidate, String sdpMid, int sdpMLineIndex);
+
+  }
+
+  /**
+   * Create a RTCPeerConnection with given URL and listener.
+   */
+  RTCPeerConnection createRTCPeerConnection(String url, RTCPeerConnection.Listener listener);
+
+  
+  /**
    * Performs an HTTP GET request to the specified URL.
    */
   void get(String url, Callback<String> callback);
@@ -150,4 +224,6 @@ public interface Net {
    * Creates a builder for a request with the specified URL.
    */
   Builder req(String url);
+  
+  
 }

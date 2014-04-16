@@ -32,6 +32,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.igniterealtime.smack</groupId>
+      <artifactId>smackx-jingle</artifactId>
+      <version>3.2.1</version>
+    </dependency>
+    
+    <dependency>
       <groupId>org.lwjgl.lwjgl</groupId>
       <artifactId>lwjgl-platform</artifactId>
       <version>${lwjgl.version}</version>
