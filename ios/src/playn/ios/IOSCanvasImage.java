@@ -64,7 +64,7 @@ public class IOSCanvasImage extends IOSAbstractImage implements CanvasImage {
     // the latest canvas data
     if (canvas.dirty()) {
       canvas.clearDirty();
-      clearTexture();
+      refreshTexture();
     }
     return super.ensureTexture();
   }

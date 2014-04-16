@@ -22,9 +22,11 @@ public interface Platform {
 
   enum Type { JAVA, HTML, ANDROID, IOS, FLASH, STUB }
 
+  Platform.Type type();
+
   void run(Game game);
 
-  Platform.Type type();
+  void reportError(String message, Throwable cause);
 
   double time();
 
@@ -37,6 +39,8 @@ public interface Platform {
   void invokeLater(Runnable runnable);
 
   void setLifecycleListener(PlayN.LifecycleListener listener);
+
+  void setErrorReporter(PlayN.ErrorReporter reporter);
 
   void setPropagateEvents(boolean propagate);
 
@@ -61,8 +65,4 @@ public interface Platform {
   Touch touch();
 
   Storage storage();
-
-  Analytics analytics();
-
-  RegularExpression regularExpression();
 }

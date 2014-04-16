@@ -94,7 +94,7 @@ public class IndexedTrisShader extends GLShader {
 
   @Override
   public String toString() {
-    return "itris/" + texCore + "/" + colorCore;
+    return "itris/" + texCore;
   }
 
   /**
@@ -109,11 +109,6 @@ public class IndexedTrisShader extends GLShader {
   @Override
   protected Core createTextureCore() {
     return new ITCore(vertexShader(), textureFragmentShader());
-  }
-
-  @Override
-  protected Core createColorCore() {
-    return new ITCore(vertexShader(), colorFragmentShader());
   }
 
   protected class ITCore extends Core {
@@ -168,13 +163,15 @@ public class IndexedTrisShader extends GLShader {
     }
 
     @Override
-    public void prepare(int tint, boolean justActivated) {
+    public void prepare(int tex, int tint, boolean justActivated) {
+      super.prepare(tex, tint, justActivated);
       this.arTint = (tint >> 16) & 0xFFFF;
       this.gbTint = tint & 0xFFFF;
     }
 
     @Override
     public void flush() {
+      super.flush();
       if (vertices.position() == 0)
         return;
       ctx.checkGLError("Shader.flush");

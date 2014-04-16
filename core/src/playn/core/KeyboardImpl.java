@@ -11,3 +11,22 @@
  * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package playn.core;
+
+/**
+ * Handles the common logic for all platform {@link Keyboard} implementations.
+ */
+public abstract class KeyboardImpl implements Keyboard {
+
+  protected Listener listener;
+
+  @Override
+  public Listener listener () {
+    return listener;
+  }
+
+  @Override
+  public void setListener(Listener listener) {
+    this.listener = listener;
+  }
+}

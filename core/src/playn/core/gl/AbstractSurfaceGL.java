@@ -21,7 +21,6 @@ import java.util.List;
 import pythagoras.f.FloatMath;
 import pythagoras.f.MathUtil;
 
-import playn.core.Asserts;
 import playn.core.Image;
 import playn.core.InternalTransform;
 import playn.core.Layer;
@@ -122,7 +121,8 @@ abstract class AbstractSurfaceGL implements Surface {
                        0, 0, length/fillPattern.width(), width/fillPattern.height());
       }
     } else {
-      shader.prepareColor(Tint.combine(fillColor, tint));
+      int tex = ctx.fillImage().ensureTexture();
+      shader.prepareTexture(tex, Tint.combine(fillColor, tint));
       shader.addQuad(l, 0, 0, length, width, 0, 0, 1, 1);
     }
     return this;
@@ -141,7 +141,8 @@ abstract class AbstractSurfaceGL implements Surface {
         shader.addQuad(topTransform(), x, y, x+width, y+height, x / tw, y / th, r / tw, b / th);
       }
     } else {
-      shader.prepareColor(Tint.combine(fillColor, tint));
+      int tex = ctx.fillImage().ensureTexture();
+      shader.prepareTexture(tex, Tint.combine(fillColor, tint));
       shader.addQuad(topTransform(), x, y, x+width, y+height, 0, 0, 1, 1);
     }
     return this;
@@ -159,7 +160,8 @@ abstract class AbstractSurfaceGL implements Surface {
         shader.addTriangles(topTransform(), xys, fillPattern.width(), fillPattern.height(), indices);
       }
     } else {
-      shader.prepareColor(Tint.combine(fillColor, tint));
+      int tex = ctx.fillImage().ensureTexture();
+      shader.prepareTexture(tex, Tint.combine(fillColor, tint));
       shader.addTriangles(topTransform(), xys, 1, 1, indices);
     }
     return this;
@@ -181,7 +183,7 @@ abstract class AbstractSurfaceGL implements Surface {
 
   @Override
   public Surface restore() {
-    Asserts.checkState(transformStack.size() > 1, "Unbalanced save/restore");
+    assert transformStack.size() > 1 : "Unbalanced save/restore";
     transformStack.remove(transformStack.size() - 1);
     return this;
   }
@@ -236,7 +238,7 @@ abstract class AbstractSurfaceGL implements Surface {
   @Override
   public Surface setFillPattern(Pattern pattern) {
     // TODO: Add it to the state stack.
-    Asserts.checkArgument(pattern instanceof GLPattern);
+    assert pattern instanceof GLPattern;
     this.fillPattern = ((GLPattern) pattern).image();
     this.fillPattern.setRepeat(true, true);
     return this;

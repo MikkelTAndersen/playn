@@ -108,12 +108,6 @@ public interface Graphics {
   ImageLayer createImageLayer(Image image);
 
   /**
-   * @deprecated Use {@link #createSurface} and {@link #createImageLayer}.
-   */
-  @Deprecated
-  SurfaceLayer createSurfaceLayer(float width, float height);
-
-  /**
    * Creates an image that can be painted using the {@link Canvas} interface.
    */
   CanvasImage createImage(float width, float height);
@@ -145,8 +139,14 @@ public interface Graphics {
   Font createFont(String name, Font.Style style, float size);
 
   /**
-   * Lays out the supplied text using the specified format. The text may subsequently be rendered
-   * on a canvas via {@link Canvas#fillText(TextLayout,float,float)}.
+   * Lays out a single line of text using the specified format. The text may subsequently be
+   * rendered on a canvas via {@link Canvas#fillText(TextLayout,float,float)}.
    */
   TextLayout layoutText(String text, TextFormat format);
+
+  /**
+   * Lays out multiple lines of text using the specified format and wrap configuration. The text
+   * may subsequently be rendered on a canvas via {@link Canvas#fillText(TextLayout,float,float)}.
+   */
+  TextLayout[] layoutText(String text, TextFormat format, TextWrap wrap);
 }

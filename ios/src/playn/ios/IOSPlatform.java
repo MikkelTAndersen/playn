@@ -41,7 +41,6 @@ import playn.core.Json;
 import playn.core.Mouse;
 import playn.core.MouseStub;
 import playn.core.PlayN;
-import playn.core.RegularExpression;
 import playn.core.json.JsonImpl;
 
 /**
@@ -168,7 +167,6 @@ public class IOSPlatform extends AbstractPlatform {
   private final IOSStorage storage;
   private final IOSTouch touch;
   private final IOSAssets assets;
-  private final IOSAnalytics analytics;
 
   private Game game;
 
@@ -185,13 +183,30 @@ public class IOSPlatform extends AbstractPlatform {
   private OrientationChangeListener orientationChangeListener;
 
   /** Returns the top-level UIWindow. */
-  public UIWindow window () {
+  public UIWindow window() {
     return mainWindow;
   }
 
   /** Returns the controller for the root view. */
   public UIViewController rootViewController() {
     return rootViewController;
+  }
+
+  /** Returns the main game view. You can add subviews to this view if you wish to overlay views
+   * onto your game. */
+  public UIView gameView() {
+    return gameView;
+  }
+
+  /** Returns the orientations we're configured to support. */
+  public SupportedOrients supportedOrients() {
+    return orients;
+  }
+
+  /** Configures a listener that is notified when the game orientation changes. */
+  public void setOrientationChangeListener(OrientationChangeListener listener) {
+    orientationChangeListener = listener;
+    dispatchOrientationChange(currentOrientation);
   }
 
   protected IOSPlatform(UIApplication app, Config config) {
@@ -219,7 +234,6 @@ public class IOSPlatform extends AbstractPlatform {
     pointer = new IOSPointer(graphics);
     touch = new IOSTouch(graphics);
     assets = new IOSAssets(this);
-    analytics = new IOSAnalytics();
     storage = new IOSStorage();
 
     mainWindow = new UIWindow(bounds);
@@ -256,7 +270,7 @@ public class IOSPlatform extends AbstractPlatform {
         try {
           action.run();
         } catch (Throwable t) {
-          log.warn("Async task failure [task=" + action + "]", t);
+          reportError("Async task failure [task=" + action + "]", t);
         }
       }
     }));
@@ -270,11 +284,6 @@ public class IOSPlatform extends AbstractPlatform {
   @Override
   public IOSAssets assets() {
     return assets;
-  }
-
-  @Override
-  public IOSAnalytics analytics() {
-    return analytics;
   }
 
   @Override
@@ -323,18 +332,8 @@ public class IOSPlatform extends AbstractPlatform {
   }
 
   @Override
-  public RegularExpression regularExpression() {
-    return null; // new IOSRegularExpression();
-  }
-
-  @Override
   public IOSStorage storage() {
     return storage;
-  }
-
-  /** Returns the orientations we're configured to support. */
-  public SupportedOrients supportedOrients() {
-    return orients;
   }
 
   @Override
@@ -369,15 +368,6 @@ public class IOSPlatform extends AbstractPlatform {
     gameView.RunWithFrameInterval(frameInterval);
     // make our main window visible
     mainWindow.MakeKeyAndVisible();
-  }
-
-  public UIView gameView () {
-    return gameView;
-  }
-
-  public void setOrientationChangeListener (OrientationChangeListener listener) {
-    orientationChangeListener = listener;
-    dispatchOrientationChange(currentOrientation);
   }
 
   // make these accessible to IOSApplicationDelegate

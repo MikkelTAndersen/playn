@@ -16,6 +16,7 @@
 package playn.html;
 
 import playn.core.Asserts;
+import com.google.gwt.canvas.dom.client.Context2d;
 import playn.core.Canvas;
 import playn.core.Gradient;
 import playn.core.Path;
@@ -48,7 +49,7 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
 
   @Override
   public Canvas clip(Path path) {
-    Asserts.checkArgument(path instanceof HtmlPath);
+    assert path instanceof HtmlPath;
     ((HtmlPath) path).replay(ctx);
     ctx.clip();
     return this;
@@ -114,7 +115,7 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
 
   @Override
   public Canvas fillPath(Path path) {
-    Asserts.checkArgument(path instanceof HtmlPath);
+    assert path instanceof HtmlPath;
     ((HtmlPath) path).replay(ctx);
     ctx.fill();
     isDirty = true;
@@ -187,14 +188,14 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
 
   @Override
   public Canvas setFillGradient(Gradient gradient) {
-    Asserts.checkArgument(gradient instanceof HtmlGradient);
+    assert gradient instanceof HtmlGradient;
     ctx.setFillStyle(((HtmlGradient) gradient).gradient);
     return this;
   }
 
   @Override
   public Canvas setFillPattern(Pattern pattern) {
-    Asserts.checkArgument(pattern instanceof HtmlPattern);
+    assert pattern instanceof HtmlPattern;
     ctx.setFillStyle(((HtmlPattern) pattern).pattern(ctx));
     return this;
   }
@@ -249,7 +250,7 @@ abstract class AbstractHtmlCanvas extends AbstractCanvasGL<Context2d> {
 
   @Override
   public Canvas strokePath(Path path) {
-    Asserts.checkArgument(path instanceof HtmlPath);
+    assert path instanceof HtmlPath;
     ((HtmlPath) path).replay(ctx);
     ctx.stroke();
     isDirty = true;

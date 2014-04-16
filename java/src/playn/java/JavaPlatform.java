@@ -27,7 +27,6 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 
 import playn.core.AbstractPlatform;
-import playn.core.Analytics;
 import playn.core.Game;
 import playn.core.Json;
 import playn.core.Key;
@@ -35,7 +34,6 @@ import playn.core.Keyboard;
 import playn.core.Mouse;
 import playn.core.Net;
 import playn.core.PlayN;
-import playn.core.RegularExpression;
 import playn.core.Storage;
 import playn.core.Touch;
 import playn.core.TouchImpl;
@@ -61,6 +59,10 @@ public class JavaPlatform extends AbstractPlatform {
 
     /** The height of the PlayN window, in pixels. */
     public int height = 480;
+
+    /** Whether or not to run the game in fullscreen mode. <em>Note:</em> this is not well tested,
+     * so you may discover issues. Consider yourself warned. */
+    public boolean fullscreen;
 
     /** If set, emulates Touch and disables Mouse. For testing. */
     public boolean emulateTouch;
@@ -119,10 +121,8 @@ public class JavaPlatform extends AbstractPlatform {
   public final boolean convertImagesOnLoad;
 
   private final Config config;
-  private final JavaAnalytics analytics = new JavaAnalytics();
   private final JavaAudio audio = new JavaAudio(this);
   private final JavaNet net = new JavaNet(this);
-  private final JavaRegularExpression regex = new JavaRegularExpression();
   private final JavaStorage storage;
   private final JsonImpl json = new JsonImpl();
   private final JavaKeyboard keyboard;
@@ -220,18 +220,8 @@ public class JavaPlatform extends AbstractPlatform {
   }
 
   @Override
-  public Analytics analytics() {
-    return analytics;
-  }
-
-  @Override
   public JavaAssets assets() {
     return assets;
-  }
-
-  @Override
-  public RegularExpression regularExpression() {
-    return regex;
   }
 
   @Override
@@ -254,7 +244,7 @@ public class JavaPlatform extends AbstractPlatform {
     try {
       Desktop.getDesktop().browse(URI.create(url));
     } catch (Exception e) {
-      log.warn("Failed to open URL [url=" + url + ", error=" + e + "]");
+      reportError("Failed to open URL [url=" + url + "]", e);
     }
   }
 

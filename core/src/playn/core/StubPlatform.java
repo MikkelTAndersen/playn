@@ -42,24 +42,7 @@ import playn.core.util.Callback;
  * <li> {@link #keyboard} - allows listener registration, never generates events
  * </ul>
  */
-public class StubPlatform implements Platform {
-
-  private final Log log = new LogImpl() {
-    @Override
-    protected void logImpl(Level level, String msg, Throwable e) {
-      String prefix;
-      switch (level) {
-      default:
-      case DEBUG: prefix = "D: "; break;
-      case INFO: prefix = ""; break;
-      case WARN: prefix = "W: "; break;
-      case ERROR: prefix = "E: "; break;
-      }
-      System.err.println(prefix + msg);
-      if (e != null)
-        e.printStackTrace(System.err);
-    }
-  };
+public class StubPlatform extends AbstractPlatform {
 
   private Storage storage = new Storage() {
     private final Map<String,String> _data = new HashMap<String,String>();
@@ -84,12 +67,10 @@ public class StubPlatform implements Platform {
     }
   };
 
-  private Keyboard keyboard = new Keyboard() {
-    @Override public void setListener(Listener listener) {} // noop
+  private Keyboard keyboard = new KeyboardImpl() {
     @Override public boolean hasHardwareKeyboard() { return false; }
-    @Override
-    public void getText(Keyboard.TextType textType, String label, String initialValue,
-                        Callback<String> callback) {
+    @Override public void getText(Keyboard.TextType textType, String label, String initialValue,
+                                  Callback<String> callback) {
       callback.onSuccess(null);
     }
   };
@@ -100,7 +81,24 @@ public class StubPlatform implements Platform {
   private Pointer pointer = new PointerImpl() {};
   private final long start = System.currentTimeMillis();
 
-  protected PlayN.LifecycleListener _lifecycleListener;
+  public StubPlatform() {
+    super(new LogImpl() {
+      @Override
+      protected void logImpl(Level level, String msg, Throwable e) {
+        String prefix;
+        switch (level) {
+        default:
+        case DEBUG: prefix = "D: "; break;
+        case INFO: prefix = ""; break;
+        case WARN: prefix = "W: "; break;
+        case ERROR: prefix = "E: "; break;
+        }
+        System.err.println(prefix + msg);
+        if (e != null)
+          e.printStackTrace(System.err);
+      }
+    });
+  }
 
   @Override
   public void run(Game game) {
@@ -142,11 +140,6 @@ public class StubPlatform implements Platform {
   }
 
   @Override
-  public void setLifecycleListener(PlayN.LifecycleListener listener) {
-    _lifecycleListener = listener;
-  }
-
-  @Override
   public Audio audio() {
     throw new UnsupportedOperationException();
   }
@@ -172,11 +165,6 @@ public class StubPlatform implements Platform {
   }
 
   @Override
-  public Log log() {
-    return log;
-  }
-
-  @Override
   public Net net() {
     throw new UnsupportedOperationException();
   }
@@ -199,15 +187,5 @@ public class StubPlatform implements Platform {
   @Override
   public Storage storage() {
     return storage;
-  }
-
-  @Override
-  public Analytics analytics() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public RegularExpression regularExpression() {
-    throw new UnsupportedOperationException();
   }
 }

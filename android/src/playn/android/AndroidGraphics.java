@@ -30,13 +30,13 @@ import pythagoras.f.IPoint;
 import pythagoras.f.MathUtil;
 import pythagoras.f.Point;
 
-import playn.core.Asserts;
 import playn.core.CanvasImage;
 import playn.core.Font;
 import playn.core.Gradient;
 import playn.core.GroupLayer;
 import playn.core.TextFormat;
 import playn.core.TextLayout;
+import playn.core.TextWrap;
 import playn.core.gl.GL20;
 import playn.core.gl.GLContext;
 import playn.core.gl.GraphicsGL;
@@ -98,7 +98,7 @@ public class AndroidGraphics extends GraphicsGL {
     try {
       registerFont(platform.assets().getTypeface(path), name, style, ligatureGlyphs);
     } catch (Exception e) {
-      platform.log().warn("Failed to load font [name=" + name + ", path=" + path + "]", e);
+      platform.reportError("Failed to load font [name=" + name + ", path=" + path + "]", e);
     }
   }
 
@@ -147,7 +147,8 @@ public class AndroidGraphics extends GraphicsGL {
    * especially large canvases.
    */
   public void setCanvasScaleFunc(ScaleFunc scaleFunc) {
-    canvasScaleFunc = Asserts.checkNotNull(scaleFunc, "Scale func must not be null");
+    if (scaleFunc == null) throw new NullPointerException("Scale func must not be null");
+    canvasScaleFunc = scaleFunc;
   }
 
   @Override
@@ -177,7 +178,12 @@ public class AndroidGraphics extends GraphicsGL {
 
   @Override
   public TextLayout layoutText(String text, TextFormat format) {
-    return new AndroidTextLayout(text, format);
+    return AndroidTextLayout.layoutText(text, format);
+  }
+
+  @Override
+  public TextLayout[] layoutText(String text, TextFormat format, TextWrap wrap) {
+    return AndroidTextLayout.layoutText(text, format, wrap);
   }
 
   @Override

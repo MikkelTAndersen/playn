@@ -33,7 +33,7 @@ public abstract class ImageGL<GC> extends AbstractImageGL<GC> {
 
   @Override
   public int ensureTexture() {
-    if (tex != 0) {
+    if (tex > 0) {
       return tex;
     } else if (!isReady()) {
       return 0;
@@ -89,6 +89,17 @@ public abstract class ImageGL<GC> extends AbstractImageGL<GC> {
     int powtex = ctx.createTexture(width, height, repeatX, repeatY, mipmapped);
     updateTexture(powtex);
     return powtex;
+  }
+
+  /**
+   * Called by canvas image implementations in {@link #ensureTexture} to either cause their texture
+   * data to be reuploaded (in the simple case where the image is neither repeated nor mipmapped),
+   * or their texture to be destroyed so that it is subsequently recreated with updated texture
+   * data.
+   */
+  protected void refreshTexture() {
+    if (repeatX || repeatY || mipmapped) clearTexture();
+    else if (tex > 0) updateTexture(tex);
   }
 
   private int scaleTexture() {

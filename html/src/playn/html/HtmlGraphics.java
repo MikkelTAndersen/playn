@@ -30,13 +30,13 @@ import com.google.gwt.user.client.Window;
 
 import pythagoras.f.Point;
 
-import playn.core.Asserts;
 import playn.core.CanvasImage;
 import playn.core.Font;
 import playn.core.Gradient;
 import playn.core.Graphics;
 import playn.core.TextFormat;
 import playn.core.TextLayout;
+import playn.core.TextWrap;
 import playn.core.gl.GL20;
 import playn.core.gl.Scale;
 
@@ -69,7 +69,7 @@ public abstract class HtmlGraphics implements Graphics {
   private final Map<Font,HtmlFontMetrics> fontMetrics = new HashMap<Font,HtmlFontMetrics>();
 
   private static final String HEIGHT_TEXT =
-    "THEQUICKBROWNFOXJUMPEDOVERTHELAZYDOGthequickbrownfoxjumpedoverthelazydog";
+    "THEQUICKBROWNFOXJUMPEDOVERTHELAZYDOGthequickbrownfoxjumpedoverthelazydog_-+!.,[]0123456789";
   private static final String EMWIDTH_TEXT = "m";
 
   // Temporary hack to fix mouse coordinates for scaled fullscreen mode.
@@ -96,7 +96,7 @@ public abstract class HtmlGraphics implements Graphics {
   public void registerFontMetrics(String name, Font.Style style, float size, float lineHeight) {
     HtmlFont font = new HtmlFont(this, name, style, size);
     HtmlFontMetrics metrics = getFontMetrics(font); // get emwidth via default measurement
-    fontMetrics.put(font, new HtmlFontMetrics(lineHeight, metrics.emwidth));
+    fontMetrics.put(font, new HtmlFontMetrics(font, lineHeight, metrics.emwidth));
   }
 
   @Override
@@ -107,7 +107,7 @@ public abstract class HtmlGraphics implements Graphics {
   @Override
   public Gradient createLinearGradient(float x0, float y0, float x1, float y1,
       int[] colors, float[] positions) {
-    Asserts.checkArgument(colors.length == positions.length);
+    assert colors.length == positions.length;
 
     CanvasGradient gradient = dummyCtx.createLinearGradient(x0, y0, x1, y1);
     for (int i = 0; i < colors.length; ++i) {
@@ -119,7 +119,7 @@ public abstract class HtmlGraphics implements Graphics {
   @Override
   public Gradient createRadialGradient(float x, float y, float r, int[] colors,
       float[] positions) {
-    Asserts.checkArgument(colors.length == positions.length);
+    assert colors.length == positions.length;
 
     CanvasGradient gradient = dummyCtx.createRadialGradient(x, y, 0, x, y, r);
     for (int i = 0; i < colors.length; ++i) {
@@ -135,7 +135,12 @@ public abstract class HtmlGraphics implements Graphics {
 
   @Override
   public TextLayout layoutText(String text, TextFormat format) {
-    return new HtmlTextLayout(dummyCtx, text, format);
+    return HtmlTextLayout.layoutText(this, dummyCtx, text, format);
+  }
+
+  @Override
+  public TextLayout[] layoutText(String text, TextFormat format, TextWrap wrap) {
+    return HtmlTextLayout.layoutText(this, dummyCtx, text, format, wrap);
   }
 
   @Override
@@ -169,13 +174,13 @@ public abstract class HtmlGraphics implements Graphics {
     dummyCanvas = doc.createCanvasElement();
     dummyCtx = dummyCanvas.getContext2d();
 
-    rootElement = doc.getElementById("playn-root");
+    rootElement = doc.getElementById(config.rootId);
     if (rootElement == null) {
       rootElement = doc.createDivElement();
       rootElement.setAttribute("style", "width: 640px; height: 480px");
       doc.getBody().appendChild(rootElement);
     } else {
-      // clear the contents of the "playn-root" element, if present
+      // clear the contents of the root element, if present
       rootElement.setInnerHTML("");
     }
 
@@ -185,6 +190,7 @@ public abstract class HtmlGraphics implements Graphics {
     measureElement.getStyle().setPosition(Style.Position.ABSOLUTE);
     measureElement.getStyle().setTop(-500, Unit.PX);
     measureElement.getStyle().setOverflow(Style.Overflow.VISIBLE);
+    measureElement.getStyle().setWhiteSpace(Style.WhiteSpace.NOWRAP);
     rootElement.appendChild(measureElement);
 
     if (config.experimentalFullscreen) {
@@ -216,13 +222,14 @@ public abstract class HtmlGraphics implements Graphics {
 
   abstract Scale scale();
 
-  HtmlFontMetrics getFontMetrics(Font font) {
+  HtmlFontMetrics getFontMetrics(HtmlFont font) {
     HtmlFontMetrics metrics = fontMetrics.get(font);
     if (metrics == null) {
       // TODO: when Context2d.measureText some day returns a height, nix this hackery
       measureElement.getStyle().setFontSize(font.size(), Unit.PX);
       measureElement.getStyle().setFontWeight(Style.FontWeight.NORMAL);
       measureElement.getStyle().setFontStyle(Style.FontStyle.NORMAL);
+      measureElement.getStyle().setProperty("fontFamily", font.name());
       measureElement.setInnerText(HEIGHT_TEXT);
       switch (font.style()) {
       case BOLD:
@@ -231,13 +238,17 @@ public abstract class HtmlGraphics implements Graphics {
       case ITALIC:
         measureElement.getStyle().setFontStyle(Style.FontStyle.ITALIC);
         break;
+      case BOLD_ITALIC:
+        measureElement.getStyle().setFontWeight(Style.FontWeight.BOLD);
+        measureElement.getStyle().setFontStyle(Style.FontStyle.ITALIC);
+        break;
       default:
         break; // nada
       }
       float height = measureElement.getOffsetHeight();
       measureElement.setInnerText(EMWIDTH_TEXT);
       float emwidth = measureElement.getOffsetWidth();
-      metrics = new HtmlFontMetrics(height, emwidth);
+      metrics = new HtmlFontMetrics(font, height, emwidth);
       fontMetrics.put(font, metrics);
     }
     return metrics;

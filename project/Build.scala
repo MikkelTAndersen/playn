@@ -43,7 +43,7 @@ object PlayNBuild extends samskivert.MavenBuild {
       // tests depends on resource files mixed into source directory, yay!
       unmanagedResourceDirectories in Test <+= baseDirectory / "tests"
     )
-    case "jbox2d" | "webgl" | "flash" | "ios" => srcDirSettings
+    case "jbox2d" | "webgl" | "ios" => srcDirSettings
     case "java" | "android" => srcDirSettings
     case "swt-java" => srcDirSettings ++ seq(
       resolvers += "SWT Repo" at "https://swt-repo.googlecode.com/svn/repo/"
@@ -54,7 +54,9 @@ object PlayNBuild extends samskivert.MavenBuild {
     )
     case "tests-assets" => testSettings
     case "tests-core" => testSettings
-    case "tests-java" => testSettings ++ spray.revolver.RevolverPlugin.Revolver.settings
+    case "tests-java" => testSettings ++ spray.revolver.RevolverPlugin.Revolver.settings ++ seq(
+      mainClass in (Compile, run) := Some("playn.tests.java.TestsGameJava")
+    )
     case "tests-swt-java" => testSettings ++ spray.revolver.RevolverPlugin.Revolver.settings ++ seq(
       javaOptions ++= Seq("-XstartOnFirstThread")
     )

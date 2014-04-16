@@ -34,6 +34,7 @@ import playn.core.Font;
 import playn.core.Gradient;
 import playn.core.TextFormat;
 import playn.core.TextLayout;
+import playn.core.TextWrap;
 import playn.core.gl.GL20;
 import playn.core.gl.GL20Context;
 import playn.core.gl.GraphicsGL;
@@ -67,7 +68,8 @@ public class JavaGraphics extends GraphicsGL {
     aFontContext = aGfx.getFontRenderContext();
 
     if (!config.headless) {
-      setDisplayMode(ctx.scale.scaledCeil(config.width), ctx.scale.scaledCeil(config.height), false);
+      setDisplayMode(ctx.scale.scaledCeil(config.width), ctx.scale.scaledCeil(config.height),
+                     config.fullscreen);
     }
   }
 
@@ -84,7 +86,7 @@ public class JavaGraphics extends GraphicsGL {
         java.awt.Font.TRUETYPE_FONT, ((JavaAssets) assets()).getAssetStream(path));
       _fonts.put(name, font);
     } catch (Exception e) {
-      log().warn("Failed to load font [name=" + name + ", path=" + path + "]", e);
+      platform.reportError("Failed to load font [name=" + name + ", path=" + path + "]", e);
     }
   }
 
@@ -172,7 +174,12 @@ public class JavaGraphics extends GraphicsGL {
 
   @Override
   public TextLayout layoutText(String text, TextFormat format) {
-    return new JavaTextLayout(this, text, format);
+    return JavaTextLayout.layoutText(this, text, format);
+  }
+
+  @Override
+  public TextLayout[] layoutText(String text, TextFormat format, TextWrap wrap) {
+    return JavaTextLayout.layoutText(this, text, format, wrap);
   }
 
   @Override

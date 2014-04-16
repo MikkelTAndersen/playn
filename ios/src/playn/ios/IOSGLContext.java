@@ -100,7 +100,7 @@ public class IOSGLContext extends GLContext {
 
   @Override
   public String getString(int param) {
-    return GL.GetString(All.wrap(param));
+    return GL.GetString(StringName.wrap(param));
   }
 
   @Override
@@ -151,9 +151,7 @@ public class IOSGLContext extends GLContext {
     GL.GenTextures(1, texw);
     int tex = texw[0];
     if (tex == 0) {
-      throw new IllegalStateException(
-        "Attempted to generate texture before GL was initialized. " +
-        "You cannot create and render SurfaceLayer in Game.init() on iOS.");
+      throw new IllegalStateException(NO_SURF_IN_INIT_ERR);
     }
 
     TextureTarget tt = TextureTarget.wrap(TextureTarget.Texture2D);
@@ -198,6 +196,7 @@ public class IOSGLContext extends GLContext {
 
   @Override
   public void destroyTexture(int texObj) {
+    flush(); // flush in case this texture is queued up to be drawn
     GL.DeleteTextures(1, new int[] { texObj });
   }
 
@@ -269,9 +268,7 @@ public class IOSGLContext extends GLContext {
 
     int fbuf = fbufw[0];
     if (fbuf == 0) {
-      throw new IllegalStateException(
-        "Attempted to generate frame buffer before GL was initialized. " +
-        "You cannot create SurfaceLayer in Game.init() on iOS.");
+      throw new IllegalStateException(NO_SURF_IN_INIT_ERR);
     }
 
     GL.BindFramebuffer(FramebufferTarget.wrap(FramebufferTarget.Framebuffer), fbuf);
@@ -324,6 +321,7 @@ public class IOSGLContext extends GLContext {
   }
 
   void updateTexture(int tex, int width, int height, IntPtr data) {
+    GL.BindTexture(TextureTarget.wrap(TextureTarget.Texture2D), tex);
     GL.TexImage2D(TextureTarget.wrap(TextureTarget.Texture2D), 0,
                   PixelInternalFormat.wrap(PixelInternalFormat.Rgba), width, height, 0,
                   PixelFormat.wrap(PixelFormat.Rgba), PixelType.wrap(PixelType.UnsignedByte), data);
@@ -336,7 +334,7 @@ public class IOSGLContext extends GLContext {
       GL.Clear(ClearBufferMask.wrap(ClearBufferMask.ColorBufferBit | // clear to transparent
                                     ClearBufferMask.DepthBufferBit));
       rootLayer.paint(rootTransform, Tint.NOOP_TINT, null); // paint all the layers
-      useShader(null, false); // guarantee a shader flush
+      useShader(null); // guarantee a shader flush
     }
     if (STATS_ENABLED) stats.frames++;
   }
@@ -360,4 +358,8 @@ public class IOSGLContext extends GLContext {
     default: return filter;
     }
   }
+
+  protected static final String NO_SURF_IN_INIT_ERR =
+    "Attempted to generate texture before GL was initialized. Unfortunately, " +
+    "you cannot create and render to a SurfaceImage in Game.init() on iOS.";
 }

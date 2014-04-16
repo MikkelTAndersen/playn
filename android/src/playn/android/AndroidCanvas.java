@@ -18,6 +18,11 @@ package playn.android;
 import java.util.LinkedList;
 
 import playn.core.Asserts;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import playn.core.Canvas;
 import playn.core.Gradient;
 import playn.core.Path;
@@ -76,7 +81,6 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
 
   @Override
   public Canvas clip(Path clipPath) {
-    Asserts.checkArgument(clipPath instanceof AndroidPath);
     canvas.clipPath(((AndroidPath) clipPath).path);
     return this;
   }
@@ -131,7 +135,6 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
 
   @Override
   public Canvas fillPath(Path path) {
-    Asserts.checkArgument(path instanceof AndroidPath);
     canvas.drawPath(((AndroidPath) path).path, currentState().prepareFill());
     isDirty = true;
     return this;
@@ -171,7 +174,7 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
     canvas.restore();
     paintStack.removeFirst();
 
-    Asserts.check(paintStack.size() > 0, "Unbalanced save/restore");
+    assert paintStack.size() > 0 : "Unbalanced save/restore";
     return this;
   }
 
@@ -218,14 +221,12 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
 
   @Override
   public Canvas setFillGradient(Gradient gradient) {
-    Asserts.checkArgument(gradient instanceof AndroidGradient);
     currentState().setFillGradient((AndroidGradient) gradient);
     return this;
   }
 
   @Override
   public Canvas setFillPattern(Pattern pattern) {
-    Asserts.checkArgument(pattern instanceof AndroidPattern);
     currentState().setFillPattern((AndroidPattern) pattern);
     return this;
   }
@@ -277,7 +278,6 @@ class AndroidCanvas extends AbstractCanvasGL<AndroidCanvas> {
 
   @Override
   public Canvas strokePath(Path path) {
-    Asserts.checkArgument(path instanceof AndroidPath);
     canvas.drawPath(((AndroidPath) path).path, currentState().prepareStroke());
     isDirty = true;
     return this;

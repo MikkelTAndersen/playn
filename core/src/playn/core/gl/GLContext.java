@@ -21,10 +21,10 @@ import java.util.List;
 
 import pythagoras.i.Rectangle;
 
-import playn.core.Asserts;
+import playn.core.AbstractPlatform;
+import playn.core.CanvasImage;
 import playn.core.Image;
 import playn.core.InternalTransform;
-import playn.core.Platform;
 import playn.core.StockInternalTransform;
 
 public abstract class GLContext {
@@ -66,12 +66,13 @@ public abstract class GLContext {
   protected static final boolean STATS_ENABLED = true;
   protected final Stats stats = new Stats();
 
-  protected final Platform platform;
+  protected final AbstractPlatform platform;
   private GLShader curShader;
   private int lastFramebuffer, epoch;
   private int pushedFramebuffer = -1, pushedWidth, pushedHeight;
   private List<Rectangle> scissors = new ArrayList<Rectangle>();
   private int scissorDepth;
+  private Image fillImage;
 
   /** The (actual screen pixel) width and height of our default frame buffer. */
   protected int defaultFbufWidth, defaultFbufHeight;
@@ -164,7 +165,8 @@ public abstract class GLContext {
    * followed immediately by a call to {@link #bindFramebuffer(int,int,int)} or {@link
    * #pushFramebuffer}. */
   public int createFramebuffer(int tex) {
-    flush();
+    flush(true); // flush any pending rendering calls, because createFramebufferImpl (necessarily)
+                 // binds the new framebuffer in order to bind it to the specified texture (meh)
     return createFramebufferImpl(tex);
   }
 
@@ -244,8 +246,8 @@ public abstract class GLContext {
 
   public void bindFramebuffer(int fbuf, int width, int height) {
     if (fbuf != lastFramebuffer) {
+      flush(true); // flush and deactivate any shader rendering to the old framebuffer
       checkGLError("bindFramebuffer");
-      flush();
       bindFramebufferImpl(lastFramebuffer = fbuf, curFbufWidth = width, curFbufHeight = height);
     }
   }
@@ -258,7 +260,7 @@ public abstract class GLContext {
    * This must be followed by a call to {@link #popFramebuffer}. Also, it is not allowed to push a
    * framebuffer if a framebuffer is already pushed. Only one level of nesting is supported. */
   public void pushFramebuffer(int fbuf, int width, int height) {
-    Asserts.checkState(pushedFramebuffer == -1, "Already have a pushed framebuffer");
+    assert pushedFramebuffer == -1 : "Already have a pushed framebuffer";
     pushedFramebuffer = lastFramebuffer;
     pushedWidth = curFbufWidth;
     pushedHeight = curFbufHeight;
@@ -268,7 +270,7 @@ public abstract class GLContext {
   /** Pops the framebuffer pushed by a previous call to {@link #pushFramebuffer} and restores the
    * framebuffer that was active prior to that call. */
   public void popFramebuffer() {
-    Asserts.checkState(pushedFramebuffer != -1, "Have no pushed framebuffer");
+    assert pushedFramebuffer != -1 : "Have no pushed framebuffer";
     bindFramebuffer(pushedFramebuffer, pushedWidth, pushedHeight);
     pushedFramebuffer = -1;
   }
@@ -291,15 +293,18 @@ public abstract class GLContext {
     if (curShader != null) {
       checkGLError("flush()");
       curShader.flush();
-      if (deactivate) curShader.deactivate();
+      if (deactivate) {
+        curShader.deactivate();
+        curShader = null;
+      }
     }
   }
 
   /**
    * Makes the supplied shader the current shader, flushing any previous shader.
    */
-  public boolean useShader(GLShader shader, boolean forceFlush) {
-    if (curShader == shader && !forceFlush)
+  public boolean useShader(GLShader shader) {
+    if (curShader == shader)
       return false;
     checkGLError("useShader");
     flush(true);
@@ -327,6 +332,19 @@ public abstract class GLContext {
    */
   public String trisShaderInfo() {
     return String.valueOf(trisShader());
+  }
+
+  /**
+   * Returns a (created on demand, then cached) 4x4 image used when filling solid color quads or
+   * triangles. We use a 4x4 rather than a 1x1 to avoid aliasing at non-integral scale factors.
+   */
+  Image fillImage() {
+    if (fillImage == null) {
+      CanvasImage image = platform.graphics().createImage(4, 4);
+      image.canvas().setFillColor(0xFFFFFFFF).fillRect(0, 0, 4, 4);
+      fillImage = image;
+    }
+    return fillImage;
   }
 
   /**
@@ -375,7 +393,7 @@ public abstract class GLContext {
       return scissorDepth;
   }
 
-  protected GLContext(Platform platform, float scaleFactor) {
+  protected GLContext(AbstractPlatform platform, float scaleFactor) {
     this.scale = new Scale(scaleFactor);
     this.platform = platform;
   }
@@ -423,10 +441,10 @@ public abstract class GLContext {
     if (shouldTryQuadShader()) {
       try {
         GLShader quadShader = new QuadShader(this);
-        quadShader.createCores(); // force core creation to test whether it fails
+        quadShader.createCore(); // force core creation to test whether it fails
         return quadShader;
       } catch (Throwable t) {
-        platform.log().warn("Failed to create QuadShader: " + t);
+        platform.reportError("Failed to create QuadShader", t);
       }
     }
     return new IndexedTrisShader(this);

@@ -154,11 +154,6 @@ public class QuadShader extends GLShader {
     return new QuadCore(vertexShader(), textureFragmentShader());
   }
 
-  @Override
-  protected Core createColorCore() {
-    return new QuadCore(vertexShader(), colorFragmentShader());
-  }
-
   protected class QuadCore extends Core {
     private final Uniform2f uScreenSize;
     private final Uniform4fv uData;
@@ -216,13 +211,15 @@ public class QuadShader extends GLShader {
     }
 
     @Override
-    public void prepare(int tint, boolean justActivated) {
+    public void prepare(int tex, int tint, boolean justActivated) {
+      super.prepare(tex, tint, justActivated);
       this.arTint = (tint >> 16) & 0xFFFF;
       this.gbTint = tint & 0xFFFF;
     }
 
     @Override
     public void flush() {
+      super.flush();
       if (quadCounter == 0)
         return;
 

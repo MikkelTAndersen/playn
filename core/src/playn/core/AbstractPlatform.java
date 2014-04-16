@@ -23,10 +23,22 @@ import playn.core.util.RunQueue;
  */
 public abstract class AbstractPlatform implements Platform {
 
+  protected final PlayN.ErrorReporter DEFAULT_REPORTER = new PlayN.ErrorReporter() {
+    public void reportError(String message, Throwable err) {
+      log.warn(message, err);
+    }
+  };
+
   protected final RunQueue runQueue;
   protected final Log log;
 
   private PlayN.LifecycleListener lifecycleListener;
+  private PlayN.ErrorReporter errorReporter = DEFAULT_REPORTER;
+
+  @Override
+  public void reportError(String message, Throwable err) {
+    errorReporter.reportError(message, err);
+  }
 
   @Override
   public void invokeLater(Runnable runnable) {
@@ -36,6 +48,11 @@ public abstract class AbstractPlatform implements Platform {
   @Override
   public void setLifecycleListener(PlayN.LifecycleListener listener) {
     lifecycleListener = listener;
+  }
+
+  @Override
+  public void setErrorReporter(PlayN.ErrorReporter reporter) {
+    errorReporter = (reporter == null) ? DEFAULT_REPORTER : reporter;
   }
 
   @Override
@@ -75,7 +92,7 @@ public abstract class AbstractPlatform implements Platform {
 
   protected AbstractPlatform(Log log) {
     this.log = log;
-    this.runQueue = new RunQueue(log);
+    this.runQueue = new RunQueue(this);
   }
 
   protected void onPause() {
@@ -83,7 +100,7 @@ public abstract class AbstractPlatform implements Platform {
       try {
         lifecycleListener.onPause();
       } catch (Exception e) {
-        log.warn("LifecycleListener.onPause failure", e);
+        reportError("LifecycleListener.onPause failure", e);
       }
     }
   }
@@ -93,7 +110,7 @@ public abstract class AbstractPlatform implements Platform {
       try {
         lifecycleListener.onResume();
       } catch (Exception e) {
-        log.warn("LifecycleListener.onResume failure", e);
+        reportError("LifecycleListener.onResume failure", e);
       }
     }
   }
@@ -103,7 +120,7 @@ public abstract class AbstractPlatform implements Platform {
       try {
         lifecycleListener.onExit();
       } catch (Exception e) {
-        log.warn("LifecycleListener.onExit failure", e);
+        reportError("LifecycleListener.onExit failure", e);
       }
     }
   }

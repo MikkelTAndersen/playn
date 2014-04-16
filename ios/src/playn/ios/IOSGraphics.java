@@ -31,6 +31,7 @@ import playn.core.Gradient;
 import playn.core.GroupLayer;
 import playn.core.TextFormat;
 import playn.core.TextLayout;
+import playn.core.TextWrap;
 import playn.core.gl.GL20;
 import playn.core.gl.GLContext;
 import playn.core.gl.GraphicsGL;
@@ -93,7 +94,12 @@ public class IOSGraphics extends GraphicsGL {
 
   @Override
   public TextLayout layoutText(String text, TextFormat format) {
-    return new IOSTextLayout(this, text, format);
+    return IOSTextLayout.layoutText(this, text, format);
+  }
+
+  @Override
+  public TextLayout[] layoutText(String text, TextFormat format, TextWrap wrap) {
+    return IOSTextLayout.layoutText(this, text, format, wrap);
   }
 
   @Override
