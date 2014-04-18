@@ -136,7 +136,7 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	@Override
 	public void setRemoteDescription(String sessionDescription) {
 		RTCSessionDescriptionInit descriptionInit = WebRTC
-				.createRTCSessionDescriptionInit(RTCSdpType.OFFER,
+				.createRTCSessionDescriptionInit(RTCSdpType.ANSWER,
 						sessionDescription);
 		RTCSessionDescription sdp = WebRTC
 				.createRTCSessionDescription(descriptionInit);

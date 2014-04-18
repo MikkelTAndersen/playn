@@ -26,8 +26,6 @@ import playn.core.NetImpl;
 import playn.core.PlayN;
 import playn.core.util.Callback;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
 import com.google.gwt.xhr.client.ReadyStateChangeHandler;
 import com.google.gwt.xhr.client.XMLHttpRequest;
 import com.seanchenxi.gwt.html.client.event.OpenEvent;
@@ -36,7 +34,6 @@ import com.seanchenxi.gwt.html.client.util.Json;
 import com.seanchenxi.gwt.webrtc.client.Constraint;
 import com.seanchenxi.gwt.webrtc.client.Constraints;
 import com.seanchenxi.gwt.webrtc.client.WebRTC;
-import com.seanchenxi.gwt.webrtc.client.connection.RTCIceServer;
 
 public class HtmlNet extends NetImpl {
 
@@ -113,13 +110,13 @@ public class HtmlNet extends NetImpl {
 
 	@Override
 	public RTCPeerConnection createRTCPeerConnection(String url, final Listener listener) {
-        JsArray<RTCIceServer> iceServers = JavaScriptObject.createArray().cast();
+//        JsArray<RTCIceServer> iceServers = JavaScriptObject.createArray().cast();
 //        if (WebRTC.isGecko()) {
 //            iceServers.push(WebRTC.createRTCIceServer("stun:stun.services.mozilla.com"));
 //        } else if (WebRTC.isWebkit()) {
 //            iceServers.push(WebRTC.createRTCIceServer("stun:stun.l.google.com:19302"));
 //        }
-        final com.seanchenxi.gwt.webrtc.client.connection.RTCConfiguration configuration = WebRTC.createRTCConfiguration(iceServers);
+        final com.seanchenxi.gwt.webrtc.client.connection.RTCConfiguration configuration = null;//WebRTC.createRTCConfiguration(iceServers);
         final Constraints constraints = getPCConstraints();
         final com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection pc = WebRTC.createRTCPeerConnection(configuration, constraints);
         PlayN.log().info("Created RTCPeerConnection with:\n  configuration=" + Json.stringify(configuration) + "\n  constraints=" + Json.stringify(constraints) + "\n");
