@@ -119,21 +119,21 @@ public class HtmlNet extends NetImpl {
         final com.seanchenxi.gwt.webrtc.client.connection.RTCConfiguration configuration = null;//WebRTC.createRTCConfiguration(iceServers);
         final Constraints constraints = getPCConstraints();
         final com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection pc = WebRTC.createRTCPeerConnection(configuration, constraints);
-        PlayN.log().info("Created RTCPeerConnection with:\n  configuration=" + Json.stringify(configuration) + "\n  constraints=" + Json.stringify(constraints) + "\n");
+//        PlayN.log().info("Created RTCPeerConnection with:\n  configuration=" + Json.stringify(configuration) + "\n  constraints=" + Json.stringify(constraints) + "\n");
 
-		pc.addOpenHandler(new OpenEvent.Handler() {
-			@Override
-			public void onOpen(OpenEvent event) {
-				PlayN.log().error("OpenEvent : "+ event);
-			}
-		});
-
-		pc.addStateChangeHandler(new StateChangeEvent.Handler() {
-			@Override
-			public void onStateChange(StateChangeEvent event) {
-				PlayN.log().error("StateChangeEvent : "+ event);
-			}
-		});
+//		pc.addOpenHandler(new OpenEvent.Handler() {
+//			@Override
+//			public void onOpen(OpenEvent event) {
+//				PlayN.log().error("OpenEvent : "+ event);
+//			}
+//		});
+//
+//		pc.addStateChangeHandler(new StateChangeEvent.Handler() {
+//			@Override
+//			public void onStateChange(StateChangeEvent event) {
+//				PlayN.log().error("StateChangeEvent : "+ event);
+//			}
+//		});
 
         final HTMLRTCPeerConnection con = new HTMLRTCPeerConnection(pc, listener, constraints);
        return con;

@@ -63,7 +63,7 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 			public void onSuccess(RTCSessionDescription sessionDescription) {
 				pc.setLocalDescription(sessionDescription);
 				listener.onSetLocalDescription(sessionDescription.getSdp());
-				PlayN.log().error("OFFER COMPLETED");
+//				PlayN.log().error("OFFER COMPLETED");
 			}
 
 			@Override
@@ -92,7 +92,7 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 			public void onSuccess(RTCSessionDescription sessionDescription) {
 				pc.setLocalDescription(sessionDescription);
 				listener.onSetRemoteDescription(sessionDescription.getSdp());
-				PlayN.log().error("ANSWER COMPLETED");
+//				PlayN.log().error("ANSWER COMPLETED");
 			}
 
 			@Override
@@ -152,11 +152,11 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		    rtcDataChannel = new RTCDataChannel(){
 				@Override
 				public void addListener(final Listener dataListener) {
-					PlayN.log().error("ADDED LISTENERS " + gwtChannel.getReadyState());
+//					PlayN.log().error("ADDED LISTENERS " + gwtChannel.getReadyState());
 					gwtChannel.addMessageHandler(new Handler() {
 						@Override
 						public void onMessage(MessageEvent event) {
-							PlayN.log().error("onMessage LISTENERS");
+//							PlayN.log().error("onMessage LISTENERS");
 							dataListener.onMessage((String) event.getData());
 						}
 					});
@@ -169,14 +169,14 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 					gwtChannel.addOpenHandler(new com.seanchenxi.gwt.html.client.event.OpenEvent.Handler(){
 						@Override
 						public void onOpen(com.seanchenxi.gwt.html.client.event.OpenEvent event) {
-							PlayN.log().error("addOpenHandler LISTENERS");
+//							PlayN.log().error("addOpenHandler LISTENERS");
 							dataListener.onOpen();
 						}
 					});
 					gwtChannel.addErrorHandler(new ErrorEvent.Handler<NativeEvent>(){
 						@Override
 						public void onError(ErrorEvent<NativeEvent> event) {
-							PlayN.log().error("onError LISTENERS " +event.toDebugString());
+//							PlayN.log().error("onError LISTENERS " +event.toDebugString());
 							dataListener.onError(event.toDebugString());
 						}});
 				}
