@@ -56,11 +56,17 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	}
 
 	public RTCDataChannel createOffer() {
-		dataChannel = pc.createDataChannel("sendDataChannel",
-				WebRTC.createDataChannelInit(false));
+		dataChannel = pc.createDataChannel("sendDataCh",
+				WebRTC.createDataChannelInit(true));
 		pc.createOffer(new RTCSessionDescriptionCallback() {
 			@Override
 			public void onSuccess(RTCSessionDescription sessionDescription) {
+				String sdp = sessionDescription.getSdp();
+				String[] splitted = sdp.split("b=AS:30");
+				if(splitted != null) {
+					String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
+					sessionDescription.setSdp(newSDP);
+				}
 				pc.setLocalDescription(sessionDescription);
 				listener.onSetLocalDescription(sessionDescription.getSdp());
 //				PlayN.log().error("OFFER COMPLETED");
@@ -90,6 +96,12 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		pc.createAnswer(new RTCSessionDescriptionCallback() {
 			@Override
 			public void onSuccess(RTCSessionDescription sessionDescription) {
+				String sdp = sessionDescription.getSdp();
+				String[] splitted = sdp.split("b=AS:30");
+				if(splitted != null) {
+					String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
+					sessionDescription.setSdp(newSDP);
+				}
 				pc.setLocalDescription(sessionDescription);
 				listener.onSetRemoteDescription(sessionDescription.getSdp());
 //				PlayN.log().error("ANSWER COMPLETED");

@@ -23,14 +23,10 @@ import java.util.Map;
 
 import playn.core.Net.RTCPeerConnection.Listener;
 import playn.core.NetImpl;
-import playn.core.PlayN;
 import playn.core.util.Callback;
 
 import com.google.gwt.xhr.client.ReadyStateChangeHandler;
 import com.google.gwt.xhr.client.XMLHttpRequest;
-import com.seanchenxi.gwt.html.client.event.OpenEvent;
-import com.seanchenxi.gwt.html.client.event.StateChangeEvent;
-import com.seanchenxi.gwt.html.client.util.Json;
 import com.seanchenxi.gwt.webrtc.client.Constraint;
 import com.seanchenxi.gwt.webrtc.client.Constraints;
 import com.seanchenxi.gwt.webrtc.client.WebRTC;
