@@ -109,9 +109,8 @@ class AndroidNet extends NetImpl {
     });
   }
 
-@Override
-public RTCPeerConnection createRTCPeerConnection(String url, Listener listener) {
-	// TODO Auto-generated method stub
-	return null;
-}
+	@Override
+	public RTCPeerConnection createRTCPeerConnection(String url, Listener listener) {
+		return new AndroidRTCPeerConnection(listener);
+	}
 }

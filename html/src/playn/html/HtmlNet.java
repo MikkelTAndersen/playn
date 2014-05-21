@@ -27,9 +27,6 @@ import playn.core.util.Callback;
 
 import com.google.gwt.xhr.client.ReadyStateChangeHandler;
 import com.google.gwt.xhr.client.XMLHttpRequest;
-import com.seanchenxi.gwt.webrtc.client.Constraint;
-import com.seanchenxi.gwt.webrtc.client.Constraints;
-import com.seanchenxi.gwt.webrtc.client.WebRTC;
 
 public class HtmlNet extends NetImpl {
 
@@ -106,40 +103,6 @@ public class HtmlNet extends NetImpl {
 
 	@Override
 	public RTCPeerConnection createRTCPeerConnection(String url, final Listener listener) {
-//        JsArray<RTCIceServer> iceServers = JavaScriptObject.createArray().cast();
-//        if (WebRTC.isGecko()) {
-//            iceServers.push(WebRTC.createRTCIceServer("stun:stun.services.mozilla.com"));
-//        } else if (WebRTC.isWebkit()) {
-//            iceServers.push(WebRTC.createRTCIceServer("stun:stun.l.google.com:19302"));
-//        }
-        final com.seanchenxi.gwt.webrtc.client.connection.RTCConfiguration configuration = null;//WebRTC.createRTCConfiguration(iceServers);
-        final Constraints constraints = getPCConstraints();
-        final com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection pc = WebRTC.createRTCPeerConnection(configuration, constraints);
-//        PlayN.log().info("Created RTCPeerConnection with:\n  configuration=" + Json.stringify(configuration) + "\n  constraints=" + Json.stringify(constraints) + "\n");
-
-//		pc.addOpenHandler(new OpenEvent.Handler() {
-//			@Override
-//			public void onOpen(OpenEvent event) {
-//				PlayN.log().error("OpenEvent : "+ event);
-//			}
-//		});
-//
-//		pc.addStateChangeHandler(new StateChangeEvent.Handler() {
-//			@Override
-//			public void onStateChange(StateChangeEvent event) {
-//				PlayN.log().error("StateChangeEvent : "+ event);
-//			}
-//		});
-
-        final HTMLRTCPeerConnection con = new HTMLRTCPeerConnection(pc, listener, constraints);
-       return con;
+       return new HTMLRTCPeerConnection(listener);
 	}
-
-	protected Constraints getPCConstraints() {
-        Constraint constraint = Constraint.create();
-        constraint.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_OPTIONAL_RTPDATACHANNELS, true);
-        final Constraints constraints = Constraints.create();
-        constraints.getOptional().push(constraint);
-        return constraints;
-    }
 }

@@ -137,8 +137,8 @@ public interface Net {
   WebSocket createWebSocket(String url, WebSocket.Listener listener);
 
   /**
-    
-    
+
+
 var pc = new webkitRTCPeerConnection(servers,
   {optional: [{RtpDataChannels: true}]});
 
@@ -156,7 +156,7 @@ document.querySelector("button#send").onclick = function (){
   sendChannel.send(data);
 };
 */
-  
+
 /** Encapsulates a RTC Peer Connection. */
   interface RTCPeerConnection {
     /** Notifies game of web socket events. */
@@ -165,22 +165,23 @@ document.querySelector("button#send").onclick = function (){
       void onDataChannel(RTCDataChannelEvent event);
 
       void onSetLocalDescription(String sessionDescription);
-      
+
       void onSetRemoteDescription(String sessionDescription);
-      
+
       void onIceCandidate(String candidate, String sdpMid, int sdpMLineIndex);
     }
-    
+
 	void close();
 
 	RTCDataChannel createOffer();
-    
+
     interface RTCDataChannelEvent  {
         RTCDataChannel getChannel();
     }
-    
-    interface RTCDataChannel  { 
+
+    interface RTCDataChannel  {
         void send(String data);
+        RTCDataChannelState getState();
         void addListener(Listener listener);
     	 interface Listener  {
 	    	void onMessage(String data);
@@ -188,16 +189,23 @@ document.querySelector("button#send").onclick = function (){
 	        void onError(String reason);
 	    	void onOpen();
 	    }
+
+    	public enum RTCDataChannelState {
+    		CONNECTING,
+    		CLOSING,
+    		OPEN,
+    		CLOSED
+    	}
     }
 
     String getLocalDescription();
 
     void setLocalDescription(String sessionDescription);
-    
+
     String getRemoteDescription();
 
     void setRemoteDescription(String sessionDescription);
-	
+
     void createAnswer(String sdp);
 
 	void addIceCandidate(String candidate, String sdpMid, int sdpMLineIndex);
@@ -209,7 +217,7 @@ document.querySelector("button#send").onclick = function (){
    */
   RTCPeerConnection createRTCPeerConnection(String url, RTCPeerConnection.Listener listener);
 
-  
+
   /**
    * Performs an HTTP GET request to the specified URL.
    */
@@ -224,6 +232,6 @@ document.querySelector("button#send").onclick = function (){
    * Creates a builder for a request with the specified URL.
    */
   Builder req(String url);
-  
-  
+
+
 }

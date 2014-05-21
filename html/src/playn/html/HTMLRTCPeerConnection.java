@@ -2,7 +2,10 @@ package playn.html;
 
 import playn.core.Net;
 import playn.core.PlayN;
+import playn.core.Net.RTCPeerConnection.RTCDataChannel.RTCDataChannelState;
 
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.NativeEvent;
 import com.seanchenxi.gwt.html.client.event.CloseEvent;
 import com.seanchenxi.gwt.html.client.event.DataChannelEvent;
@@ -10,16 +13,20 @@ import com.seanchenxi.gwt.html.client.event.ErrorEvent;
 import com.seanchenxi.gwt.html.client.event.IceCandidateEvent;
 import com.seanchenxi.gwt.html.client.event.MessageEvent;
 import com.seanchenxi.gwt.html.client.event.MessageEvent.Handler;
+import com.seanchenxi.gwt.webrtc.client.Constraint;
 import com.seanchenxi.gwt.webrtc.client.Constraints;
 import com.seanchenxi.gwt.webrtc.client.WebRTC;
+import com.seanchenxi.gwt.webrtc.client.connection.RTCConfiguration;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCIceCandidate;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCIceCandidateInit;
+import com.seanchenxi.gwt.webrtc.client.connection.RTCIceServer;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSdpType;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescription;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescriptionCallback;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescriptionInit;
 import com.seanchenxi.gwt.webrtc.client.data.DataChannel;
+import com.seanchenxi.gwt.websocket.client.WebSocket.ReadyState;
 
 public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	DataChannel dataChannel;
@@ -27,8 +34,9 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	private Listener listener;
 	private Constraints constraints;
 
-	public HTMLRTCPeerConnection(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection pc, final Listener listener, Constraints constraints) {
-		this.pc = pc;
+	public HTMLRTCPeerConnection(final Listener listener) {
+        Constraints constraints = getPCConstraints();
+        pc = WebRTC.createRTCPeerConnection(getPCConfiguration(), constraints);
 		this.listener = listener;
 		this.constraints = constraints;
 		pc.addDataChannelHandler(new DataChannelEvent.Handler() {
@@ -50,6 +58,19 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		});
 	}
 
+    protected RTCConfiguration getPCConfiguration() {
+        JsArray<RTCIceServer> iceServers = JavaScriptObject.createArray().cast();
+        return WebRTC.createRTCConfiguration(iceServers);
+    }
+
+	protected Constraints getPCConstraints() {
+        Constraint constraint = Constraint.create();
+        constraint.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_OPTIONAL_RTPDATACHANNELS, false);
+        final Constraints constraints = Constraints.create();
+        constraints.getOptional().push(constraint);
+        return constraints;
+    }
+
 	@Override
 	public void close() {
 		pc.close();
@@ -61,16 +82,12 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		pc.createOffer(new RTCSessionDescriptionCallback() {
 			@Override
 			public void onSuccess(RTCSessionDescription sessionDescription) {
-				String sdp = sessionDescription.getSdp();
-				String[] splitted = sdp.split("b=AS:30");
-				if(splitted != null) {
-					String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
-					sessionDescription.setSdp(newSDP);
-				}
+				hackToFixChromeTransmitSizeIssue(sessionDescription);
 				pc.setLocalDescription(sessionDescription);
 				listener.onSetLocalDescription(sessionDescription.getSdp());
 //				PlayN.log().error("OFFER COMPLETED");
 			}
+
 
 			@Override
 			public void onError(String error) {
@@ -93,26 +110,35 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		final RTCSessionDescription sessionDesc = WebRTC
 				.createRTCSessionDescription(descriptionInit);
 		pc.setRemoteDescription(sessionDesc);
-		pc.createAnswer(new RTCSessionDescriptionCallback() {
+		PlayN.invokeLater(new Runnable() {
 			@Override
-			public void onSuccess(RTCSessionDescription sessionDescription) {
-				String sdp = sessionDescription.getSdp();
-				String[] splitted = sdp.split("b=AS:30");
-				if(splitted != null) {
-					String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
-					sessionDescription.setSdp(newSDP);
-				}
-				pc.setLocalDescription(sessionDescription);
-				listener.onSetRemoteDescription(sessionDescription.getSdp());
-//				PlayN.log().error("ANSWER COMPLETED");
-			}
+			public void run() {
+				pc.createAnswer(new RTCSessionDescriptionCallback() {
+					@Override
+					public void onSuccess(RTCSessionDescription sessionDescription) {
+						hackToFixChromeTransmitSizeIssue(sessionDescription);
+						pc.setLocalDescription(sessionDescription);
+						listener.onSetRemoteDescription(sessionDescription.getSdp());
+//						PlayN.log().error("ANSWER COMPLETED");
+					}
 
-			@Override
-			public void onError(String error) {
-				PlayN.log().error("ANSWER FAILED : " + error);
+					@Override
+					public void onError(String error) {
+						PlayN.log().error("ANSWER FAILED : " + error);
+					}
+				}, constraints);
 			}
-		}, constraints);
+		});
+	}
 
+	private void hackToFixChromeTransmitSizeIssue(RTCSessionDescription sessionDescription) {
+		String sdp = sessionDescription.getSdp();
+		String[] splitted = sdp.split("b=AS:30");
+		if(splitted != null && splitted[1] != null) {
+			String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
+			PlayN.log().error("Mikkel replaced String");
+			sessionDescription.setSdp(newSDP);
+		}
 	}
 
 	@Override
@@ -196,7 +222,22 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 				@Override
 				public void send(String data) {
 					gwtChannel.send(data);
-				}};
+				}
+				@Override
+				public RTCDataChannelState getState() {
+					switch (gwtChannel.getReadyState()) {
+					case CONNECTING:
+						return RTCDataChannelState.CONNECTING;
+					case CLOSING:
+						return RTCDataChannelState.CLOSING;
+					case OPEN:
+						return RTCDataChannelState.OPEN;
+					case CLOSED:
+						return RTCDataChannelState.CLOSED;
+					}
+					return RTCDataChannelState.CLOSED;
+				}
+				};
 		}
 
 		@Override
