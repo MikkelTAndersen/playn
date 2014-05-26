@@ -199,7 +199,20 @@ public class HtmlPlatform extends AbstractPlatform {
   public void init() {
     audio.init();
     keyboard.init();
+    addCloseListener(new CloseListener() {
+		@Override
+		public void fire() {
+			onExit();
+		}
+	});
   }
+
+  private native void addCloseListener(CloseListener callback) /*-{
+	  var fn = function(e) {
+	    callback.@playn.html.CloseListener::fire()();
+	  };
+	    $wnd.onbeforeunload = fn;
+  }-*/;
 
   @Override
   public HtmlAssets assets() {

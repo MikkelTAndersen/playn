@@ -2,7 +2,6 @@ package playn.html;
 
 import playn.core.Net;
 import playn.core.PlayN;
-import playn.core.Net.RTCPeerConnection.RTCDataChannel.RTCDataChannelState;
 
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
@@ -26,7 +25,6 @@ import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescription;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescriptionCallback;
 import com.seanchenxi.gwt.webrtc.client.connection.RTCSessionDescriptionInit;
 import com.seanchenxi.gwt.webrtc.client.data.DataChannel;
-import com.seanchenxi.gwt.websocket.client.WebSocket.ReadyState;
 
 public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	DataChannel dataChannel;
@@ -223,6 +221,12 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 				public void send(String data) {
 					gwtChannel.send(data);
 				}
+
+				@Override
+				public void close() {
+					gwtChannel.close();
+				}
+
 				@Override
 				public RTCDataChannelState getState() {
 					switch (gwtChannel.getReadyState()) {
@@ -237,7 +241,7 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 					}
 					return RTCDataChannelState.CLOSED;
 				}
-				};
+			};
 		}
 
 		@Override

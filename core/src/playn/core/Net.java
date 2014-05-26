@@ -181,6 +181,7 @@ document.querySelector("button#send").onclick = function (){
 
     interface RTCDataChannel  {
         void send(String data);
+        void close();
         RTCDataChannelState getState();
         void addListener(Listener listener);
     	 interface Listener  {

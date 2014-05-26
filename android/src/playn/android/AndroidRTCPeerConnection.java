@@ -21,7 +21,6 @@ import org.webrtc.SessionDescription.Type;
 
 import playn.core.Net;
 import playn.core.PlayN;
-import playn.core.Net.RTCPeerConnection.RTCDataChannel.RTCDataChannelState;
 
 
 public class AndroidRTCPeerConnection implements Net.RTCPeerConnection {
@@ -330,6 +329,11 @@ public class AndroidRTCPeerConnection implements Net.RTCPeerConnection {
 ////							PlayN.log().error("onError LISTENERS " +event.toDebugString());
 //							dataListener.onError(event.toDebugString());
 //						}});
+				}
+
+				@Override
+				public void close() {
+					dataChannel.close();
 				}
 
 				@Override
