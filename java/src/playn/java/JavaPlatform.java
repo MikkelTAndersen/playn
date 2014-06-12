@@ -68,7 +68,11 @@ public class JavaPlatform extends AbstractPlatform {
     public boolean emulateTouch;
 
     /** If {link #emulateTouch} is set, sets the pivot for a two-finger touch when pressed. */
-    public Key multiTouchKey = Key.F11;
+    public Key pivotKey = Key.F11;
+
+    /** If set, toggles the activation mode when pressed. This is for emulating the active
+     * state found in {@code IOSGameView}. */
+    public Key activationKey;
 
     /** If set, converts images into a format for fast GPU uploads when initially loaded versus
      * doing it on demand when displayed. Assuming asynchronous image loads, this keeps that effort
@@ -131,6 +135,8 @@ public class JavaPlatform extends AbstractPlatform {
   private final JavaGraphics graphics;
   private final JavaMouse mouse;
   private final JavaAssets assets = new JavaAssets(this);
+  private final Keyboard.Listener keyListener;
+  private boolean active = true;
 
   private final ExecutorService _exec = Executors.newFixedThreadPool(4);
   private final long start = System.nanoTime();
@@ -138,7 +144,9 @@ public class JavaPlatform extends AbstractPlatform {
   public JavaPlatform(Config config) {
     super(new JavaLog());
     this.config = config;
-    unpackNatives();
+    if (!config.headless) {
+      unpackNatives();
+    }
     graphics = createGraphics(config);
     keyboard = createKeyboard();
     storage = new JavaStorage(this, config);
@@ -147,6 +155,21 @@ public class JavaPlatform extends AbstractPlatform {
       mouse = ((JavaEmulatedTouch)touch).createMouse(this);
     } else {
       mouse = createMouse();
+    }
+
+    if (touch instanceof JavaEmulatedTouch || config.activationKey != null) {
+      final Key pivotKey = (touch instanceof JavaEmulatedTouch) ? config.pivotKey : null;
+      final Key activationKey = config.activationKey;
+      keyListener = new Keyboard.Adapter() {
+        @Override public void onKeyUp (playn.core.Keyboard.Event event) {
+          if (event.key() == pivotKey)
+            ((JavaEmulatedTouch)touch).updatePivot();
+          else if (event.key() == activationKey)
+            toggleActivation();
+        }
+      };
+    } else {
+      keyListener = null;
     }
 
     if (!config.headless) {
@@ -291,7 +314,7 @@ public class JavaPlatform extends AbstractPlatform {
   }
   protected TouchImpl createTouch(Config config) {
     if (config.emulateTouch) {
-      return new JavaEmulatedTouch(config.multiTouchKey);
+      return new JavaEmulatedTouch();
     } else {
       return new TouchStub();
     }
@@ -306,7 +329,7 @@ public class JavaPlatform extends AbstractPlatform {
   protected void init(Game game) {
     graphics.init();
     mouse.init();
-    keyboard.init(touch);
+    keyboard.init(keyListener);
     game.init();
   }
 
@@ -337,7 +360,12 @@ public class JavaPlatform extends AbstractPlatform {
 
     // Run the game loop, render the scene graph, and update the display.
     game.tick(tick());
-    graphics.paint();
+    if (active)
+      graphics.paint();
+  }
+
+  protected void toggleActivation () {
+    active = !active;
   }
 
   protected void unpackNatives() {

@@ -21,11 +21,10 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import cli.System.DateTime;
+import cli.System.Environment;
 import cli.System.Drawing.RectangleF;
 import cli.System.Threading.ThreadPool;
 import cli.System.Threading.WaitCallback;
-
 import cli.MonoTouch.Foundation.NSUrl;
 import cli.MonoTouch.UIKit.UIApplication;
 import cli.MonoTouch.UIKit.UIDeviceOrientation;
@@ -176,7 +175,7 @@ public class IOSPlatform extends AbstractPlatform {
   private final UIWindow mainWindow;
   private final IOSRootViewController rootViewController;
   private final IOSGameView gameView;
-  private final long start = DateTime.get_Now().get_Ticks();
+  private final int start = Environment.get_TickCount();
 
   private int currentOrientation;
 
@@ -343,7 +342,7 @@ public class IOSPlatform extends AbstractPlatform {
 
   @Override
   public int tick() {
-    return (int)((DateTime.get_Now().get_Ticks() - start) / 10000);
+    return Environment.get_TickCount() - start;
   }
 
   @Override
@@ -370,20 +369,29 @@ public class IOSPlatform extends AbstractPlatform {
     mainWindow.MakeKeyAndVisible();
   }
 
-  // make these accessible to IOSApplicationDelegate
-  @Override
-  protected void onPause() {
-    super.onPause();
-    gameView.onPause();
+  // iOS lifecycle doesn't match up perfectly to PlayN lifecycle, so we expose iOS lifecycle
+  // methods here (called from IOSApplicationDelegate) and work things out here
+  void onActivated() {
+    gameView.onActivated();
   }
-  @Override
-  protected void onResume() {
-    super.onResume();
-    gameView.onResume();
+  void willEnterForeground() {
+    invokeLater(new Runnable() {
+      public void run() {
+        onResume();
+      }
+    });
   }
-  @Override
-  protected void onExit() {
-    super.onExit();
+  void onResignActivation() {
+    gameView.onResignActivation();
+  }
+  void didEnterBackground() {
+    // we call this directly rather than via invokeLater() because the PlayN thread is already
+    // stopped at this point so a) there's no point in worrying about racing with that thread, and
+    // b) onPause would never get called, since the PlayN thread is not processing events
+    onPause();
+  }
+  void willTerminate() {
+    onExit();
   }
 
   void viewDidInit(int defaultFrameBuffer) {
