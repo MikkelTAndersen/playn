@@ -58,6 +58,15 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 
     protected RTCConfiguration getPCConfiguration() {
         JsArray<RTCIceServer> iceServers = JavaScriptObject.createArray().cast();
+        if (WebRTC.isGecko()) {
+            iceServers.push(WebRTC.createRTCIceServer("stun:stun.services.mozilla.com"));
+        } else if (WebRTC.isWebkit()) {
+        	iceServers.push(WebRTC.createRTCIceServer("stun:stun.l.google.com:19302"));
+        	iceServers.push(WebRTC.createRTCIceServer("stun:stun1.l.google.com:19302"));
+        	iceServers.push(WebRTC.createRTCIceServer("stun:stun2.l.google.com:19302"));
+        	iceServers.push(WebRTC.createRTCIceServer("stun:stun3.l.google.com:19302"));
+        	iceServers.push(WebRTC.createRTCIceServer("stun:stun4.l.google.com:19302"));
+        }
         return WebRTC.createRTCConfiguration(iceServers);
     }
 
@@ -134,7 +143,6 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 		String[] splitted = sdp.split("b=AS:30");
 		if(splitted != null && splitted[1] != null) {
 			String newSDP = splitted[0] + "b=AS:1638400" + splitted[1];
-			PlayN.log().error("Mikkel replaced String");
 			sessionDescription.setSdp(newSDP);
 		}
 	}

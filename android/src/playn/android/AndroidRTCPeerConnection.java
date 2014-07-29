@@ -145,63 +145,72 @@ public class AndroidRTCPeerConnection implements Net.RTCPeerConnection {
 		pc.setRemoteDescription(new SdpObserver() {
 			@Override
 			public void onSetSuccess() {
+				PlayN.log().error("setRemoteDescription ANSWER onSetSuccess");
 			}
 
 			@Override
 			public void onSetFailure(String error) {
-				PlayN.log().error("ANSWER FAILED : " + error);
+				PlayN.log().error("setRemoteDescription ANSWER FAILED : " + error);
 			}
 
 			@Override
 			public void onCreateSuccess(SessionDescription arg0) {
+				PlayN.log().error("setRemoteDescription ANSWER onCreateSuccess");
 			}
 
 			@Override
 			public void onCreateFailure(String error) {
-				PlayN.log().error("ANSWER FAILED : " + error);
+				PlayN.log().error("setRemoteDescription ANSWER FAILED : " + error);
 			}
 		}, sessionDescription);
-		pc.createAnswer(new SdpObserver() {
+		PlayN.invokeLater(new Runnable() {
 			@Override
-			public void onSetSuccess() {
-			}
-
-			@Override
-			public void onSetFailure(String error) {
-				PlayN.log().error("ANSWER FAILED : " + error);
-			}
-
-			@Override
-			public void onCreateSuccess(SessionDescription sessionDescription) {
-				pc.setLocalDescription(new SdpObserver() {
-
+			public void run() {
+				pc.createAnswer(new SdpObserver() {
 					@Override
 					public void onSetSuccess() {
+						PlayN.log().error("createAnswer ANSWER onSetSuccess");
 					}
 
 					@Override
 					public void onSetFailure(String error) {
-						PlayN.log().error("ANSWER FAILED : " + error);
+						PlayN.log().error("createAnswer ANSWER FAILED : " + error);
 					}
 
 					@Override
-					public void onCreateSuccess(SessionDescription arg0) {
+					public void onCreateSuccess(SessionDescription sessionDescription) {
+						PlayN.log().error("createAnswer ANSWER onCreateSuccess");
+						pc.setLocalDescription(new SdpObserver() {
+							@Override
+							public void onSetSuccess() {
+								PlayN.log().error("setLocalDescription ANSWER onSetSuccess");
+							}
+
+							@Override
+							public void onSetFailure(String error) {
+								PlayN.log().error("setLocalDescription ANSWER FAILED : " + error);
+							}
+
+							@Override
+							public void onCreateSuccess(SessionDescription arg0) {
+								PlayN.log().error("setLocalDescription ANSWER onCreateSuccess");
+							}
+
+							@Override
+							public void onCreateFailure(String error) {
+								PlayN.log().error("setLocalDescription ANSWER FAILED : " + error);
+							}
+						}, sessionDescription);
+						listener.onSetRemoteDescription(sessionDescription.description);
 					}
 
 					@Override
 					public void onCreateFailure(String error) {
 						PlayN.log().error("ANSWER FAILED : " + error);
 					}
-				},sessionDescription);
-				listener.onSetRemoteDescription(sessionDescription.description);
+				}, constraints);
 			}
-
-			@Override
-			public void onCreateFailure(String error) {
-				PlayN.log().error("ANSWER FAILED : " + error);
-			}
-		}, constraints);
-
+		});
 	}
 
 	@Override
