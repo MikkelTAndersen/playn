@@ -44,6 +44,12 @@
         <scope>system</scope>
         <systemPath>${project.basedir}/libs/libjingle_peerconnection.jar</systemPath>
     </dependency>
+    
+    <dependency>
+      <groupId>com.google.android</groupId>
+      <artifactId>apk-expansion</artifactId>
+      <version>r3</version>
+    </dependency>
   </dependencies>
 
   <build>

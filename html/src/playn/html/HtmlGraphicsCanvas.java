@@ -17,6 +17,7 @@ import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.dom.client.CanvasElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.Style;
 
 import playn.core.GroupLayer;
 import playn.core.Image;
@@ -37,15 +38,35 @@ class HtmlGraphicsCanvas extends HtmlGraphics {
   private final CanvasElement elem;
   private final Context2d ctx;
   private final AbstractHtmlCanvas canvas;
+  private int rootWidth, rootHeight;
 
   public HtmlGraphicsCanvas(HtmlPlatform.Config config) {
     super(config);
     scale = new Scale(config.scaleFactor);
     rootLayer = new GroupLayerCanvas(createXform());
+
+    int rwidth = rootElement.getOffsetWidth(), rheight = rootElement.getOffsetHeight();
+    if (rwidth == 0 || rheight == 0) {
+      // if the container doesn't have an offsetWidth, it has or is a child of a node that has
+      // display:none; temporarily move it out to a visible state to determine its size
+      Element rootClone = (Element) rootElement.cloneNode(false);
+      Style style = rootClone.getStyle();
+      style.setPosition(Style.Position.ABSOLUTE);
+      style.setDisplay(Style.Display.BLOCK);
+      style.setTop(-9999, Style.Unit.PX);
+      Document.get().getBody().appendChild(rootClone);
+      rwidth = rootElement.getOffsetWidth();
+      rheight = rootElement.getOffsetHeight();
+      rootClone.removeFromParent();
+    }
+    rootWidth = rwidth;
+    rootHeight = rheight;
+
     elem = Document.get().createCanvasElement();
-    elem.setWidth(rootElement.getOffsetWidth());
-    elem.setHeight(rootElement.getOffsetHeight());
+    elem.setWidth(rwidth);
+    elem.setHeight(rheight);
     rootElement.appendChild(elem);
+
     ctx = elem.getContext2d();
     ctx.scale(config.scaleFactor, config.scaleFactor);
     canvas = new AbstractHtmlCanvas(ctx, 0, 0) {
@@ -60,12 +81,12 @@ class HtmlGraphicsCanvas extends HtmlGraphics {
 
   @Override
   public int width() {
-    return scale.invScaledFloor(elem.getOffsetWidth());
+    return scale.invScaledFloor(rootWidth);
   }
 
   @Override
   public int height() {
-    return scale.invScaledFloor(elem.getOffsetHeight());
+    return scale.invScaledFloor(rootHeight);
   }
 
   @Override
@@ -79,6 +100,8 @@ class HtmlGraphicsCanvas extends HtmlGraphics {
     super.setSize(swidth, sheight);
     elem.setWidth(swidth);
     elem.setHeight(sheight);
+    rootWidth = swidth;
+    rootHeight = sheight;
   }
 
   @Override
