@@ -71,10 +71,22 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
     }
 
 	protected Constraints getPCConstraints() {
-        Constraint constraint = Constraint.create();
-        constraint.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_OPTIONAL_RTPDATACHANNELS, false);
         final Constraints constraints = Constraints.create();
-        constraints.getOptional().push(constraint);
+		Constraint dtls = Constraint.create();
+
+		PlayN.log().error("CONSTRAINT_OPTIONAL_DTLSSRTPKEYAGREEMENT: true");
+		dtls.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_OPTIONAL_DTLSSRTPKEYAGREEMENT, true);
+        constraints.getOptional().push(dtls);
+
+        Constraint rtpdatachannels = Constraint.create();
+        PlayN.log().error("CONSTRAINT_OPTIONAL_RTPDATACHANNELS: false");
+        rtpdatachannels.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_OPTIONAL_RTPDATACHANNELS, false);
+        constraints.getOptional().push(rtpdatachannels);
+
+        Constraint mandatory = Constraint.create();
+        mandatory.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_MANDATORY_OFFERTORECEIVEAUDIO, true);
+        mandatory.set(com.seanchenxi.gwt.webrtc.client.connection.RTCPeerConnection.CONSTRAINT_MANDATORY_OFFERTORECEIVEVIDEO, false);
+        constraints.setMandatory(mandatory);
         return constraints;
     }
 
@@ -84,7 +96,7 @@ public class HTMLRTCPeerConnection implements Net.RTCPeerConnection {
 	}
 
 	public RTCDataChannel createOffer() {
-		dataChannel = pc.createDataChannel("sendDataCh",
+		dataChannel = pc.createDataChannel("sendDataCh"+PlayN.random()*10000000,
 				WebRTC.createDataChannelInit(true));
 		pc.createOffer(new RTCSessionDescriptionCallback() {
 			@Override

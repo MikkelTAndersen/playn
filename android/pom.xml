@@ -14,9 +14,6 @@
   <name>PlayN Android</name>
   <packaging>jar</packaging>
 
-  <repositories>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>com.googlecode.playn</groupId>
@@ -37,21 +34,17 @@
       <version>1.3.0</version>
     </dependency>
 
-    <dependency>
-        <groupId>libjingle</groupId>
-        <artifactId>peerconnection</artifactId>
-        <version>1.0.0</version>
-        <scope>system</scope>
-        <systemPath>${project.basedir}/libs/libjingle_peerconnection.jar</systemPath>
-    </dependency>
-    
+  	<dependency>
+		<groupId>com.google.webrtc</groupId>
+		<artifactId>libjingle_peerconnection</artifactId>
+		<version>1.0</version>
+	</dependency>
     <dependency>
       <groupId>com.google.android</groupId>
       <artifactId>apk-expansion</artifactId>
       <version>r3</version>
     </dependency>
   </dependencies>
-
   <build>
     <sourceDirectory>src</sourceDirectory>
   </build>
